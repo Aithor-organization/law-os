@@ -1,3 +1,18 @@
+/* Google Fonts — 웹 번들에서 CSS로 로드. 네이티브는 시스템 폰트 fallback. */
+/* Pretendard (Korean) via jsDelivr CDN */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
+/* Inter (English UI) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* JetBrains Mono (data/mono) */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Font fallback chains — 웹에서 font-kr, font-en, font-mono 클래스 사용 시 */
+:root {
+  --font-kr: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-en: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+}

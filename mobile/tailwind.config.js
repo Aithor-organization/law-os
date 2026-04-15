@@ -30,9 +30,10 @@ module.exports = {
         full: "9999px",
       },
       fontFamily: {
-        kr: ["Pretendard"],
-        en: ["Inter"],
-        mono: ["JetBrainsMono"],
+        // Web: global.css의 @import로 로드 / Native: 시스템 폰트 fallback
+        kr: ['"Pretendard Variable"', "Pretendard", "-apple-system", "sans-serif"],
+        en: ["Inter", "-apple-system", "sans-serif"],
+        mono: ['"JetBrains Mono"', "Menlo", "Monaco", "monospace"],
       },
       fontSize: {
         xs: "10px",
