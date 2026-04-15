@@ -2,6 +2,36 @@ import { useState } from "react";
 import { ScrollView, Text, View, Pressable, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import Markdown from "react-native-markdown-display";
+
+// Dark Academia Pro markdown styles
+const markdownStyles = {
+  body: {
+    color: "#F4F4F5",
+    fontFamily: "Pretendard",
+    fontSize: 14,
+    lineHeight: 24,
+  },
+  strong: {
+    color: "#F4F4F5",
+    fontFamily: "Pretendard-Bold",
+  },
+  em: {
+    color: "#DDB7FF",
+    fontStyle: "italic" as const,
+  },
+  bullet_list: { marginTop: 4 },
+  ordered_list: { marginTop: 4 },
+  list_item: { color: "#F4F4F5", fontFamily: "Pretendard", marginBottom: 2 },
+  paragraph: { marginTop: 0, marginBottom: 8 },
+  code_inline: {
+    fontFamily: "JetBrainsMono",
+    backgroundColor: "#1C1B1C",
+    color: "#06B6D4",
+    padding: 2,
+    borderRadius: 4,
+  },
+};
 
 /**
  * 🎨 Stitch Reference: projects/7657386961511176864/screens/252821e0257346ba9b713d333b3054df
@@ -28,7 +58,7 @@ const MESSAGES: Msg[] = [
   {
     role: "assistant",
     content:
-      "민법 제750조에 따른 불법행위가 성립하려면 다음 4가지 요건이 충족되어야 합니다.\n\n1. 고의 또는 과실 — 가해자의 주관적 요건\n2. 위법성 — 법질서 전체에 비추어 허용되지 않는 행위\n3. 책임능력 — 자기 행위의 결과를 변식할 수 있는 능력\n4. 손해의 발생과 인과관계 — 실제 손해와 가해행위 간 상당인과관계\n\n대법원은 과실의 판단 기준으로 [판례 1] '통상의 주의의무'를 제시하고 있으며, 최근 [판례 2]에서는 직업별 전문가의 높은 주의의무를 강조했습니다.",
+      "민법 제750조에 따른 불법행위가 성립하려면 다음 **4가지 요건**이 충족되어야 합니다.\n\n1. **고의 또는 과실** — 가해자의 주관적 요건\n2. **위법성** — 법질서 전체에 비추어 허용되지 않는 행위\n3. **책임능력** — 자기 행위의 결과를 변식할 수 있는 능력\n4. **손해의 발생과 인과관계** — 실제 손해와 가해행위 간 상당인과관계\n\n대법원은 과실의 판단 기준으로 [판례 1] '통상의 주의의무'를 제시하고 있으며, 최근 [판례 2]에서는 직업별 전문가의 높은 주의의무를 강조했습니다.",
     citations: [
       { label: "조문 1", type: "statute", id: "civil-750" },
       { label: "판례 1", type: "case", id: "2018da12345" },
@@ -126,9 +156,7 @@ export default function ActiveChatScreen() {
                 <View className="flex-row">
                   <View className="mr-3 w-0.5 rounded-full bg-violet" />
                   <View className="flex-1 rounded bg-surface p-4">
-                    <Text className="font-kr text-sm leading-6 text-fg">
-                      {msg.content}
-                    </Text>
+                    <Markdown style={markdownStyles}>{msg.content}</Markdown>
 
                     {/* Citations */}
                     <View className="mt-4 gap-2 border-t border-white/5 pt-3">
