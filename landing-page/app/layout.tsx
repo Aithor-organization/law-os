@@ -5,9 +5,9 @@ const SITE = "https://lawos.kr";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: "LAW.OS — 법률 공부의 새로운 OS",
+  title: "LAW.OS — 법률 공부, 주머니 속에서",
   description:
-    "⌘K 하나로 2,341개 판례와 민법 전체를 탐색하는 AI 법률 튜터. Terminal for Korean Law Students.",
+    "2,341개 판례와 민법 전체를 탐색하는 AI 법률 튜터. 언제 어디서나 물어보고 즉시 답을 받으세요.",
   keywords: [
     "법률 AI",
     "법률 챗봇",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE,
     siteName: "LAW.OS",
-    title: "LAW.OS — 법률 공부의 새로운 OS",
+    title: "LAW.OS — 법률 공부, 주머니 속에서",
     description:
-      "⌘K 하나로 2,341개 판례와 민법 전체를 탐색하는 AI 법률 튜터",
+      "2,341개 판례와 민법 전체를 탐색하는 AI 법률 튜터. 모바일 앱으로 언제 어디서나.",
     images: [
       {
         url: "/og.png",
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LAW.OS — 법률 공부의 새로운 OS",
-    description: "⌘K 하나로 민법 전체를 탐색하는 AI 법률 튜터",
+    title: "LAW.OS — 법률 공부, 주머니 속에서",
+    description: "모바일 AI 법률 튜터 · 언제 어디서나 판례 검색",
     images: ["/og.png"],
   },
   icons: {
