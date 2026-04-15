@@ -13,11 +13,32 @@
 
 | 항목 | 개수 |
 |------|------|
-| Stitch에 존재 | 20 |
+| Stitch에 존재 | **36** (2026-04-15 P0 일괄 생성 후) |
 | feature-spec 기반 필요 총 화면 | 52 |
-| ✅ 구현된 핵심 화면 | 14 |
+| ✅ 구현된 핵심 화면 | 14 (기존) + **16 (P0 신규)** = 30 |
 | 🟡 중복/재검토 | 2 (Legal OS Home 중복, Command Palette 제거 대상) |
-| ❌ 누락 (Stitch 신규 생성 필요) | 38 |
+| ❌ 누락 (P1/P2) | 22 (P1 12개, P2 10개) |
+
+### 2026-04-15 P0 일괄 생성 결과
+
+| # | 화면 | Stitch Screen ID |
+|---|------|------------------|
+| 1 | Forgot Password | `c0779576f7564504b49cd9de57d98655` |
+| 2 | Legal Disclaimer Consent | `904599456da14f249d1af5741174cfb5` |
+| 3 | Conversation List | `7e49c6e87b694bb8be64631c21f68dee` |
+| 4 | Statute Detail | `bc5c1098ac194cc9a3dd95688c4bb06a` |
+| 5 | Search Home | `62b5ca3e1d1543d09eb6f4edf2469fda` |
+| 6 | Note Detail | `7a071be618304efcbb9c127af58e8e44` |
+| 7 | Citation Detail Modal | `4c43ef26103f47ceb25d817eb5e3ecf3` |
+| 8 | Save Note Modal | `a86d47bb29a7442c8d9d1c4a16fd0528` |
+| 9 | Paywall Modal | `d9bf6414f5334c4b98bef3561b8d2224` |
+| 10 | Purchase Result Modal | `242a12fe78ac405b95034ac8455bbc15` |
+| 11 | Profile Home | `7638ec9355cb445e90e0bcc5a8fe4c1a` |
+| 12 | Edit Profile | `a7820c8ebc0e485b8b488685129e9703` |
+| 13 | Legal Pages Viewer | `022f4f3db60e44d1a8b2035c166b0784` |
+| 14 | Logout Confirm Modal | `4fcf14fc1eba4c92b1e6d9a0f519d1cd` |
+| 15 | Personal Advice Blocked Modal | `c3f65b5f39024964853ec27181e38139` |
+| 16 | Empty/Error States Showcase | `84877a9cccd34f7da32377a1b1760430` |
 
 ---
 
