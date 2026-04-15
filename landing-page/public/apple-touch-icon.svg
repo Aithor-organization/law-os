@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <rect width="180" height="180" fill="#000000"/>
+  <rect x="12" y="12" width="156" height="156" rx="32" fill="#0A0A0B"/>
+  <text x="90" y="118" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="96" font-weight="800" fill="#DDB7FF" text-anchor="middle" letter-spacing="-2">L</text>
+  <text x="90" y="148" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#06B6D4" text-anchor="middle" letter-spacing="1">LAW.OS</text>
+</svg>

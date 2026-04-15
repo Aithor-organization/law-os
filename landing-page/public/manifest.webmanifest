@@ -1,0 +1,22 @@
+{
+  "name": "LAW.OS — 법률 공부의 새로운 OS",
+  "short_name": "LAW.OS",
+  "description": "⌘K 하나로 민법 전체를 탐색하는 AI 법률 튜터",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#A855F7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
