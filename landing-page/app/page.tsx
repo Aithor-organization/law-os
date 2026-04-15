@@ -5,10 +5,10 @@ import { TerminalCard } from "@/components/ui/TerminalCard";
 const APP_STORE = "https://apps.apple.com/app/id0000000000";
 const GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=kr.lawos";
 
-// Inline iPhone mockup with a mini chat preview — no external image needed
+// Inline iPhone mockup with a rich chat preview — no external image needed
 function IPhoneMockup() {
   return (
-    <div className="relative mx-auto" style={{ width: 300, height: 600 }}>
+    <div className="relative mx-auto" style={{ width: 300, height: 620 }}>
       {/* Violet glow aura */}
       <div
         className="absolute inset-0 -m-8 rounded-[60px] blur-3xl"
@@ -16,15 +16,15 @@ function IPhoneMockup() {
       />
       {/* Phone frame */}
       <div
-        className="relative h-full w-full rounded-[44px] border border-white/10 bg-surface p-3 shadow-glow-lg"
+        className="relative h-full w-full rounded-[44px] bg-surface p-3"
         style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.35), 0 0 80px 0 rgba(168,85,247,0.25)" }}
       >
         {/* Notch */}
         <div className="absolute left-1/2 top-3 z-10 h-6 w-24 -translate-x-1/2 rounded-b-2xl bg-black" />
         {/* Screen */}
-        <div className="flex h-full w-full flex-col gap-3 overflow-hidden rounded-[34px] bg-black p-4 pt-8">
+        <div className="flex h-full w-full flex-col gap-2.5 overflow-hidden rounded-[34px] bg-black p-3 pt-8">
           {/* Status bar */}
-          <div className="flex items-center justify-between font-mono text-[9px] text-dim">
+          <div className="flex items-center justify-between px-1 font-mono text-[8px] text-dim">
             <span>14:32</span>
             <span className="flex items-center gap-1">
               <span className="h-1 w-1 animate-pulse rounded-full bg-violet" />
@@ -34,36 +34,79 @@ function IPhoneMockup() {
           </div>
 
           {/* Session header */}
-          <div className="font-mono text-[10px] uppercase text-violet-glow">
-            // 채권법 · 계약 해제
+          <div className="flex items-center justify-between font-mono text-[9px] uppercase">
+            <span className="text-violet-glow">// 채권법 · 계약 해제</span>
+            <span className="text-dim">⌥ ⓘ</span>
           </div>
 
           {/* User message */}
-          <div className="self-end rounded-md bg-surface px-3 py-2 text-[11px] text-fg" style={{ maxWidth: "85%" }}>
-            민법 제543조 해제권의 효과는?
+          <div className="self-end rounded-md bg-surface px-2.5 py-1.5 text-[10px] leading-snug text-fg" style={{ maxWidth: "85%" }}>
+            민법 제543조 해제권 행사 시 계약 효력은 어떻게 되나요? 소급효 vs 장래효 비교해서.
           </div>
 
-          {/* AI response */}
-          <div className="space-y-2">
-            <div className="font-mono text-[9px] uppercase text-violet-glow">AI · 0.8s</div>
-            <div className="text-[11px] leading-relaxed text-fg">
-              해제권 행사 시 계약은 소급적으로 소멸하며, 각 당사자는 원상회복의 의무를 부담합니다.
+          {/* AI response — rich content */}
+          <div className="space-y-2 overflow-hidden">
+            <div className="flex items-center justify-between font-mono text-[8px] uppercase">
+              <span className="text-violet-glow">AI · gpt-4-turbo · 1.2s</span>
+              <span className="text-cyan">98% ✓</span>
             </div>
+
+            {/* Headline */}
+            <div className="text-[11px] font-semibold leading-tight text-fg">
+              해제권의 효과: 소급효 원칙
+            </div>
+
+            {/* Body */}
+            <div className="text-[9px] leading-relaxed text-fg">
+              민법 제548조에 따라 계약 해제 시 각 당사자는 원상회복 의무를 지며, 효력은 계약 체결 시점으로 소급 소멸합니다.
+            </div>
+
+            {/* Inline comparison table */}
+            <div className="rounded-sm bg-surface-low p-1.5 font-mono text-[7px]">
+              <div className="grid grid-cols-3 gap-1 border-b border-white/10 pb-1 text-dim">
+                <span>구분</span>
+                <span className="text-violet-glow">소급효</span>
+                <span className="text-dim">장래효</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-1 text-fg">
+                <span className="text-dim">소멸시점</span>
+                <span>계약시</span>
+                <span>해제시</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 text-fg">
+                <span className="text-dim">반환범위</span>
+                <span>전부</span>
+                <span>미이행</span>
+              </div>
+            </div>
+
             {/* Citation chips */}
-            <div className="flex gap-1">
-              <span className="rounded-sm border border-cyan/30 px-1.5 py-0.5 font-mono text-[9px] text-cyan">
+            <div className="flex flex-wrap gap-1">
+              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
+                §543
+              </span>
+              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
                 §548
               </span>
-              <span className="rounded-sm border border-cyan/30 px-1.5 py-0.5 font-mono text-[9px] text-cyan">
+              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
                 §551
               </span>
             </div>
+
+            {/* Related case mini-card */}
+            <div className="rounded-sm border-l-2 border-violet bg-surface-low/60 p-1.5">
+              <div className="font-mono text-[7px] uppercase text-violet-glow">// 관련 판례</div>
+              <div className="mt-0.5 font-mono text-[8px] text-cyan">2019다201528</div>
+              <div className="text-[8px] leading-tight text-fg">계약해제권 행사의 법적 효과</div>
+              <div className="font-mono text-[7px] text-dim">대법원 2019.5.16 · 94% match</div>
+            </div>
           </div>
 
-          {/* Typing indicator */}
-          <div className="mt-auto flex items-center gap-2 rounded-md bg-surface-low px-3 py-2">
+          {/* Input — pushes to bottom */}
+          <div className="mt-auto flex items-center gap-1.5 rounded-md bg-surface-low px-2 py-1.5">
             <div className="h-1 w-1 animate-pulse rounded-full bg-violet" />
-            <span className="font-mono text-[10px] text-dim">질문을 입력하세요...</span>
+            <span className="font-mono text-[9px] text-dim">후속 질문...</span>
+            <span className="ml-auto font-mono text-[8px] text-cyan">↵</span>
           </div>
         </div>
       </div>
