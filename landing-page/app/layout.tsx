@@ -49,21 +49,19 @@ export const metadata: Metadata = {
 };
 
 // Structured data (SoftwareApplication schema) — for SEO
+// 출시 전이므로 집계 평점(aggregateRating)은 포함하지 않음. 실제 데이터 축적 후 추가.
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "LAW.OS",
   applicationCategory: "EducationalApplication",
   operatingSystem: "iOS, Android",
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    ratingCount: "2341",
-  },
+  description: "법학도를 위한 AI 법률 학습 튜터 — 민법/형법/헌법 조문과 판례를 출처와 함께 답변",
   offers: {
     "@type": "Offer",
     price: "0",
     priceCurrency: "KRW",
+    availability: "https://schema.org/PreOrder",
   },
 };
 

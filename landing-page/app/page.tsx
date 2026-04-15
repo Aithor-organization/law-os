@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/Button";
 import { TerminalCard } from "@/components/ui/TerminalCard";
 
-// External links — replace with real URLs before launch
-const APP_STORE = "https://apps.apple.com/app/id0000000000";
-const GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=kr.lawos";
+// 대기자 폼 — 출시 전까지 이 한 곳으로 수렴
+const WAITLIST_URL = "https://tally.so/r/lawos-waitlist";
+// TODO: 앱 출시 후 교체
+// const APP_STORE = "https://apps.apple.com/app/kr.lawos";
+// const GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=kr.lawos";
 
 // iPhone mockup with the actual Stitch Active Chat screenshot — scrollable + auto-scroll loop
 function IPhoneMockup() {
@@ -82,12 +84,12 @@ export default function HomePage() {
           </div>
           <div className="hidden gap-8 font-mono text-xs uppercase text-dim md:flex">
             <a href="#features" className="hover:text-fg">Features</a>
-            <a href="#pricing" className="hover:text-fg">Pricing</a>
-            <a href="#download" className="hover:text-fg">Download</a>
+            <a href="#waitlist" className="hover:text-fg">Waitlist</a>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost">Sign in</Button>
-            <Button variant="primary">⬇ Download</Button>
+            <a href={WAITLIST_URL} target="_blank" rel="noopener">
+              <Button variant="primary">대기자 등록</Button>
+            </a>
           </div>
         </div>
       </nav>
@@ -97,7 +99,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[60%_40%] lg:gap-0">
           <div>
             <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
-              // NOW AVAILABLE · iOS & ANDROID
+              // LAUNCHING SOON · JOIN WAITLIST
             </div>
             <h1 className="mt-6 font-kr text-6xl font-bold leading-[1.05] tracking-tightest text-fg md:text-7xl lg:text-[84px]">
               법률 공부,
@@ -108,39 +110,20 @@ export default function HomePage() {
               AI 법률 튜터를 손 안에
             </p>
             <p className="mt-6 max-w-2xl font-kr text-base leading-relaxed text-dim">
-              통학길에서, 카페에서, 도서관에서. 민법·형법·헌법 전체와 2,341개 판례를
-              언제 어디서나 물어보고 즉시 답을 받으세요.
+              통학길에서, 카페에서, 도서관에서. 민법·형법·헌법 전체를 출처와
+              함께 답변하는 AI 튜터. 출시 준비 중입니다.
             </p>
 
-            {/* Metric chips */}
-            <div className="mt-8 flex flex-wrap gap-3">
-              {[
-                ["2,341", "CASES"],
-                ["12,847", "STATUTES"],
-                ["98.4%", "ACCURACY"],
-              ].map(([n, label]) => (
-                <div key={label} className="rounded-sm bg-surface px-4 py-2 font-mono text-sm">
-                  <span className="text-cyan">{n}</span>{" "}
-                  <span className="text-[10px] uppercase text-dim">{label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Download CTAs */}
+            {/* Waitlist CTA */}
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a href={APP_STORE} target="_blank" rel="noopener">
-                <Button variant="primary" className="h-14 w-full sm:w-auto">
-                  ⬇ App Store
-                </Button>
-              </a>
-              <a href={GOOGLE_PLAY} target="_blank" rel="noopener">
-                <Button variant="primary" className="h-14 w-full sm:w-auto">
-                  ⬇ Google Play
+              <a href={WAITLIST_URL} target="_blank" rel="noopener">
+                <Button variant="primary" className="h-14 w-full px-8 sm:w-auto">
+                  ✉ 대기자 등록하기
                 </Button>
               </a>
             </div>
             <div className="mt-4 font-mono text-xs text-dim">
-              // free · no credit card · 30-day pro trial
+              // 무료 · 출시 시 알림 · 얼리 액세스 우선 제공
             </div>
           </div>
 
@@ -194,25 +177,36 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ STATS STRIP ═══ */}
+      {/* ═══ SCOPE STRIP (출시 목표 범위) ═══ */}
       <section className="border-t border-white/5 bg-surface-low py-24">
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 md:grid-cols-4">
-          {[
-            ["2,341", "ACTIVE USERS"],
-            ["47.2M", "TOKENS PROCESSED"],
-            ["12,847", "판례 INDEXED"],
-            ["98.4%", "CITATION ACCURACY"],
-          ].map(([n, label]) => (
-            <div key={label}>
-              <div className="font-mono text-5xl font-bold text-cyan">{n}</div>
-              <div className="mt-2 font-mono text-xs uppercase text-dim">{label}</div>
-            </div>
-          ))}
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+            // 출시 목표 범위
+          </div>
+          <h2 className="mt-4 font-kr text-3xl font-bold tracking-tight text-fg">
+            처음부터 끝까지 법학도만을 위해
+          </h2>
+          <div className="mt-12 grid gap-12 md:grid-cols-4">
+            {[
+              { label: "과목", value: "민·형·헌·상법" },
+              { label: "조문", value: "전체 수록" },
+              { label: "판례", value: "대법원 주요" },
+              { label: "답변", value: "출처 필수" },
+            ].map((item) => (
+              <div key={item.label}>
+                <div className="font-kr text-2xl font-bold text-cyan">{item.value}</div>
+                <div className="mt-2 font-mono text-xs uppercase text-dim">// {item.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 font-mono text-xs text-dim">
+            // 출시 시점에 확정된 수치가 공개됩니다 · 현재는 개발 중
+          </div>
         </div>
       </section>
 
-      {/* ═══ BIG DOWNLOAD CTA ═══ */}
-      <section id="download" className="relative overflow-hidden border-t border-white/5 py-40">
+      {/* ═══ BIG WAITLIST CTA ═══ */}
+      <section id="waitlist" className="relative overflow-hidden border-t border-white/5 py-40">
         <div
           className="absolute inset-0 opacity-30"
           style={{
@@ -221,30 +215,25 @@ export default function HomePage() {
         />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
-            // READY?
+            // COMING SOON
           </div>
           <h2 className="mt-6 font-kr text-6xl font-bold leading-tight tracking-tightest text-fg md:text-7xl lg:text-[96px]">
-            오늘부터
+            가장 먼저
             <br />
-            공부법이 달라집니다
+            만나보세요
           </h2>
           <p className="mt-6 font-kr text-xl text-dim">
-            가장 똑똑한 법학 학습 파트너. 앱스토어에서 지금 만나보세요.
+            출시 알림 + 얼리 액세스 기회를 드립니다.
           </p>
-          <div className="mt-12 flex flex-col justify-center gap-4 sm:flex-row">
-            <a href={APP_STORE} target="_blank" rel="noopener">
-              <Button variant="primary" className="h-16 w-full px-12 text-base sm:w-auto">
-                ⬇ Download on the App Store
-              </Button>
-            </a>
-            <a href={GOOGLE_PLAY} target="_blank" rel="noopener">
-              <Button variant="primary" className="h-16 w-full px-12 text-base sm:w-auto">
-                ⬇ Get it on Google Play
+          <div className="mt-12 flex flex-col items-center justify-center gap-4">
+            <a href={WAITLIST_URL} target="_blank" rel="noopener">
+              <Button variant="primary" className="h-16 px-12 text-base">
+                ✉ 대기자 등록하기
               </Button>
             </a>
           </div>
           <div className="mt-8 font-mono text-xs text-dim">
-            // iOS 15+ · Android 9+ · 87MB · v1.0.0
+            // 이메일 1회만 · 스팸 없음 · 언제든 해지
           </div>
         </div>
       </section>
@@ -252,41 +241,38 @@ export default function HomePage() {
       {/* ═══ FOOTER ═══ */}
       <footer className="border-t border-white/5 bg-surface-low py-16">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-12 md:grid-cols-5">
-            <div className="md:col-span-2">
+          <div className="grid gap-12 md:grid-cols-3">
+            <div>
               <div className="font-mono text-lg font-bold text-violet-glow">LAW.OS</div>
               <p className="mt-2 font-kr text-xs text-dim">
                 모바일 법률 학습 앱 · 법학도를 위한 AI 튜터
               </p>
+              <p className="mt-3 font-mono text-[10px] text-dim">
+                // 법률 상담이 아닌 학습 도구입니다
+              </p>
             </div>
-            {[
-              { title: "PRODUCT", links: ["Features", "Pricing", "Download", "Changelog"] },
-              { title: "RESOURCES", links: ["Docs", "Help", "Blog", "Contact"] },
-              { title: "LEGAL", links: ["Terms", "Privacy", "Security", "GDPR"] },
-            ].map((col) => (
-              <div key={col.title}>
-                <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
-                  // {col.title}
-                </div>
-                <ul className="mt-4 space-y-2 font-mono text-xs text-dim">
-                  {col.links.map((l) => (
-                    <li key={l}>
-                      <a href="#" className="hover:text-fg">
-                        {l}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+            <div>
+              <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+                // CONTACT
               </div>
-            ))}
-          </div>
-          <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 font-mono text-xs text-dim md:flex-row">
-            <div>© 2026 LAW.OS inc. · 사업자등록번호 123-45-67890</div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-violet" />
-              <span>ALL SYSTEMS OPERATIONAL · 99.98% uptime</span>
+              <ul className="mt-4 space-y-2 font-mono text-xs text-dim">
+                <li>hello@lawos.kr</li>
+                <li>문의: 대기자 등록 폼</li>
+              </ul>
             </div>
-            <div>v1.0.0 · build 8a7f3c2</div>
+            <div>
+              <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+                // STATUS
+              </div>
+              <ul className="mt-4 space-y-2 font-mono text-xs text-dim">
+                <li>출시 준비 중</li>
+                <li>iOS + Android</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 font-mono text-[10px] text-dim md:flex-row">
+            <div>© 2026 LAW.OS · 출시 준비 중</div>
+            <div>v1.0.0 preview</div>
           </div>
         </div>
       </footer>
