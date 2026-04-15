@@ -5,7 +5,7 @@ import { TerminalCard } from "@/components/ui/TerminalCard";
 const APP_STORE = "https://apps.apple.com/app/id0000000000";
 const GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=kr.lawos";
 
-// Inline iPhone mockup with a rich chat preview — no external image needed
+// iPhone mockup with the actual Stitch Active Chat screenshot — scrollable + auto-scroll loop
 function IPhoneMockup() {
   return (
     <div className="relative mx-auto" style={{ width: 300, height: 620 }}>
@@ -21,95 +21,51 @@ function IPhoneMockup() {
       >
         {/* Notch */}
         <div className="absolute left-1/2 top-3 z-10 h-6 w-24 -translate-x-1/2 rounded-b-2xl bg-black" />
-        {/* Screen */}
-        <div className="flex h-full w-full flex-col gap-2.5 overflow-hidden rounded-[34px] bg-black p-3 pt-8">
-          {/* Status bar */}
-          <div className="flex items-center justify-between px-1 font-mono text-[8px] text-dim">
-            <span>14:32</span>
-            <span className="flex items-center gap-1">
-              <span className="h-1 w-1 animate-pulse rounded-full bg-violet" />
-              LAW.OS
-            </span>
-            <span>●●● 100%</span>
-          </div>
 
-          {/* Session header */}
-          <div className="flex items-center justify-between font-mono text-[9px] uppercase">
-            <span className="text-violet-glow">// 채권법 · 계약 해제</span>
-            <span className="text-dim">⌥ ⓘ</span>
-          </div>
-
-          {/* User message */}
-          <div className="self-end rounded-md bg-surface px-2.5 py-1.5 text-[10px] leading-snug text-fg" style={{ maxWidth: "85%" }}>
-            민법 제543조 해제권 행사 시 계약 효력은 어떻게 되나요? 소급효 vs 장래효 비교해서.
-          </div>
-
-          {/* AI response — rich content */}
-          <div className="space-y-2 overflow-hidden">
-            <div className="flex items-center justify-between font-mono text-[8px] uppercase">
-              <span className="text-violet-glow">AI · gpt-4-turbo · 1.2s</span>
-              <span className="text-cyan">98% ✓</span>
-            </div>
-
-            {/* Headline */}
-            <div className="text-[11px] font-semibold leading-tight text-fg">
-              해제권의 효과: 소급효 원칙
-            </div>
-
-            {/* Body */}
-            <div className="text-[9px] leading-relaxed text-fg">
-              민법 제548조에 따라 계약 해제 시 각 당사자는 원상회복 의무를 지며, 효력은 계약 체결 시점으로 소급 소멸합니다.
-            </div>
-
-            {/* Inline comparison table */}
-            <div className="rounded-sm bg-surface-low p-1.5 font-mono text-[7px]">
-              <div className="grid grid-cols-3 gap-1 border-b border-white/10 pb-1 text-dim">
-                <span>구분</span>
-                <span className="text-violet-glow">소급효</span>
-                <span className="text-dim">장래효</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 pt-1 text-fg">
-                <span className="text-dim">소멸시점</span>
-                <span>계약시</span>
-                <span>해제시</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 text-fg">
-                <span className="text-dim">반환범위</span>
-                <span>전부</span>
-                <span>미이행</span>
-              </div>
-            </div>
-
-            {/* Citation chips */}
-            <div className="flex flex-wrap gap-1">
-              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
-                §543
-              </span>
-              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
-                §548
-              </span>
-              <span className="rounded-sm border border-cyan/40 bg-cyan/5 px-1.5 py-0.5 font-mono text-[8px] text-cyan">
-                §551
-              </span>
-            </div>
-
-            {/* Related case mini-card */}
-            <div className="rounded-sm border-l-2 border-violet bg-surface-low/60 p-1.5">
-              <div className="font-mono text-[7px] uppercase text-violet-glow">// 관련 판례</div>
-              <div className="mt-0.5 font-mono text-[8px] text-cyan">2019다201528</div>
-              <div className="text-[8px] leading-tight text-fg">계약해제권 행사의 법적 효과</div>
-              <div className="font-mono text-[7px] text-dim">대법원 2019.5.16 · 94% match</div>
-            </div>
-          </div>
-
-          {/* Input — pushes to bottom */}
-          <div className="mt-auto flex items-center gap-1.5 rounded-md bg-surface-low px-2 py-1.5">
-            <div className="h-1 w-1 animate-pulse rounded-full bg-violet" />
-            <span className="font-mono text-[9px] text-dim">후속 질문...</span>
-            <span className="ml-auto font-mono text-[8px] text-cyan">↵</span>
+        {/* Screen — scrollable container */}
+        <div
+          className="phone-screen-scroll relative h-full w-full overflow-y-auto overflow-x-hidden rounded-[34px] bg-black"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {/* Auto-scrolling inner — actual Stitch screenshot */}
+          <div className="phone-scroll-inner">
+            <img
+              src="/screens/active-chat-stitch.png"
+              alt="LAW.OS Active Chat — 실제 앱 화면"
+              className="block w-full select-none"
+              draggable={false}
+            />
+            {/* Duplicate for seamless loop */}
+            <img
+              src="/screens/active-chat-stitch.png"
+              alt=""
+              aria-hidden
+              className="block w-full select-none"
+              draggable={false}
+            />
           </div>
         </div>
       </div>
+
+      {/* Scroll hint badge */}
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 font-mono text-[10px] text-dim">
+        // scroll to see more ↕
+      </div>
+
+      {/* Inline keyframes — auto-scroll loop, pauses on hover */}
+      <style>{`
+        .phone-screen-scroll::-webkit-scrollbar { display: none; }
+        .phone-scroll-inner {
+          animation: scroll-loop 40s linear infinite;
+        }
+        .phone-screen-scroll:hover .phone-scroll-inner {
+          animation-play-state: paused;
+        }
+        @keyframes scroll-loop {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+      `}</style>
     </div>
   );
 }
