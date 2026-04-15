@@ -70,6 +70,160 @@ Database password: 강력한 비밀번호 → 1Password 저장
 | `audit_log` | 중요 작업 감사 로그 (계정 삭제, 결제 이벤트 등) |
 | `legal_data_sync_log` | 법령 동기화 이력 (마지막 sync 시간, 변경된 조문 수) |
 
+### 🟠 E. 프론트엔드 요구사항 기반 추가 테이블
+
+> 프론트엔드 코드를 스캔해서 찾은 추가 데이터 요구사항. 2026-04-15 추가.
+
+| 테이블 | 저장할 데이터 | 어디서 쓰는지 |
+|--------|-------------|---------------|
+| `user_favorites` | 즐겨찾기한 조문/판례 (user_id, content_type, content_id) | Statute/Case Detail의 ⭐ 버튼, Citation 모달 |
+| `search_history` | 개인 최근 검색 (query, result_type, searched_at) | Search 탭 "// 최근 검색" 칩 리스트 |
+| `search_analytics` | 인기 검색어 집계 (query, category, count) | Search 탭 "// 인기 검색어" Top 5 |
+| `study_activities` | 일별 학습 활동 (date, questions_asked, notes_saved, minutes_spent) | Library/Profile "연속 학습일 47", "이번달 질문 847" |
+| `notification_preferences` | 알림 설정 (push_enabled, email_enabled, study_reminder_time, marketing_opt_in) | Settings 알림 섹션 |
+| `notifications` | 사용자 알림 (type, title, body, read_at, created_at) | Notifications Log 화면 (Stitch에 이미 존재) |
+| `waitlist` | 출시 전 대기자 (email, name, referral_source, signed_up_at) | 랜딩 페이지 "대기자 등록" 폼 |
+| `note_exports` | 내보내기 이력 (format, note_count, file_url, expires_at) | Export Modal (Anki/PDF) |
+| `content_reports` | 부적절한 답변 신고 (message_id, category, reason, status) | 👎 피드백 확장 + 관리자 모더레이션 |
+
+---
+
+## 🧱 2.1. 추가 테이블 스키마 (카테고리 E 상세)
+
+### `user_favorites`
+```sql
+create table user_favorites (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content_type text not null check (content_type in ('statute', 'case')),
+  content_id text not null,                    -- statutes.id or cases.id
+  note text,                                    -- 개인 메모
+  created_at timestamptz default now() not null,
+  unique(user_id, content_type, content_id)
+);
+create index idx_favorites_user on user_favorites(user_id, created_at desc);
+```
+
+### `search_history`
+```sql
+create table search_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  query text not null,
+  result_type text not null check (result_type in ('statute', 'case', 'all')),
+  result_count integer default 0,
+  searched_at timestamptz default now() not null
+);
+create index idx_search_history_user on search_history(user_id, searched_at desc);
+-- 최근 10건만 유지 (trigger 또는 cron으로 오래된 것 삭제)
+```
+
+### `search_analytics` (집계 — 모든 유저 기준)
+```sql
+create table search_analytics (
+  id uuid primary key default gen_random_uuid(),
+  query text not null,
+  normalized_query text not null,               -- lowercase + trim
+  category text,                                -- civil|criminal|constitutional
+  search_count integer default 1,
+  last_searched_at timestamptz default now() not null,
+  unique(normalized_query, category)
+);
+create index idx_search_analytics_rank on search_analytics(search_count desc, last_searched_at desc);
+-- 매일 search_history 집계 → upsert
+```
+
+### `study_activities`
+```sql
+create table study_activities (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  activity_date date not null,
+  questions_asked integer default 0,
+  notes_saved integer default 0,
+  reviews_completed integer default 0,
+  minutes_spent integer default 0,
+  unique(user_id, activity_date)
+);
+create index idx_study_activities_user_date on study_activities(user_id, activity_date desc);
+-- 연속 학습일 streak는 이 테이블에서 계산 (View or function)
+```
+
+### `notification_preferences`
+```sql
+create table notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  push_enabled boolean default true,
+  email_enabled boolean default true,
+  study_reminder_enabled boolean default false,
+  study_reminder_time time default '19:00',
+  study_reminder_days text[] default array['mon','tue','wed','thu','fri'],
+  review_due_enabled boolean default true,
+  marketing_enabled boolean default false,
+  updated_at timestamptz default now() not null
+);
+```
+
+### `notifications`
+```sql
+create table notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type text not null check (type in ('study_reminder', 'review_due', 'announcement', 'billing', 'system')),
+  title text not null,
+  body text,
+  deeplink text,                                -- e.g., "lawos://note/123"
+  read_at timestamptz,
+  created_at timestamptz default now() not null
+);
+create index idx_notifications_user_unread on notifications(user_id, created_at desc) where read_at is null;
+```
+
+### `waitlist` (출시 전용 — RLS 없음, service role만)
+```sql
+create table waitlist (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  name text,
+  user_type text check (user_type in ('law_school', 'bar_exam', 'undergrad', 'other')),
+  referral_source text,                         -- where they heard about us
+  early_access_invited boolean default false,
+  signed_up_at timestamptz default now() not null
+);
+create index idx_waitlist_signed_up on waitlist(signed_up_at desc);
+```
+
+### `note_exports`
+```sql
+create table note_exports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  format text not null check (format in ('anki', 'pdf', 'json')),
+  filter_subject text,                          -- e.g., 'civil' or null for all
+  note_count integer not null,
+  file_url text not null,                        -- supabase storage signed URL
+  expires_at timestamptz not null,               -- 7일 TTL
+  created_at timestamptz default now() not null
+);
+create index idx_note_exports_user on note_exports(user_id, created_at desc);
+```
+
+### `content_reports`
+```sql
+create table content_reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  message_id uuid references messages(id) on delete set null,
+  category text not null check (category in ('inaccurate', 'inappropriate', 'unsafe', 'missing_citation', 'other')),
+  reason text,
+  status text default 'pending' check (status in ('pending', 'reviewing', 'resolved', 'dismissed')),
+  admin_notes text,
+  created_at timestamptz default now() not null,
+  resolved_at timestamptz
+);
+create index idx_content_reports_status on content_reports(status, created_at desc);
+```
+
 ---
 
 ## 🔐 3. Row Level Security (RLS) 정책
@@ -101,6 +255,19 @@ create policy "users_delete_own"
 **C 카테고리** (statutes/cases): `using (true)` — public read
 
 **D 카테고리** (admin): 별도 claims 기반 정책
+
+**E 카테고리 RLS 예외**:
+- `user_favorites`, `search_history`, `notification_preferences`, `notifications`, `note_exports`, `content_reports`, `study_activities` → 4-policy 기본 템플릿 적용 (B와 동일)
+- `search_analytics` → `using (true)` + `insert/update`는 service role만 (서버가 집계)
+- `waitlist` → 클라이언트는 `insert` 만 허용, `select`는 service role만 (이메일 프라이버시 보호)
+
+```sql
+-- waitlist 특수 정책
+create policy "anyone_can_join_waitlist"
+  on waitlist for insert
+  with check (true);
+-- SELECT/UPDATE/DELETE는 정책 없음 (service role만 가능)
+```
 
 ---
 
