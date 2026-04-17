@@ -1,0 +1,17 @@
+# Railway deployment configuration.
+# See: https://docs.railway.app/reference/config-as-code
+#
+# Railway auto-detects the Dockerfile. This file customizes the deploy step.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Gunicorn-style restart on crash with small backoff.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+# Health check — app's /health endpoint responds 200 in ~20ms.
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+# Start command is defined in Dockerfile CMD; no override needed.
