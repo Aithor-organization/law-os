@@ -40,3 +40,14 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Supabase CLI local state
+**/supabase/.temp/
+**/supabase/.branches/
+

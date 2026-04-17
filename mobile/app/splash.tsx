@@ -2,19 +2,30 @@ import { useEffect } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { getCurrentSession } from "@/lib/auth";
 
 /**
- * 🎨 Stitch Reference: projects/7657386961511176864/screens/d8d49a5a8e1942ac8e35f275d820b843
  * Splash Screen — Dark Academia Pro / Sovereign Terminal
  *
- * 1.8초 후 자동으로 Login(또는 세션 있으면 Tabs)으로 이동.
+ * 최소 1초 대기 후 세션 유무에 따라 분기:
+ *  - 세션 있음 → /(tabs)
+ *  - 세션 없음 → /(auth)/login
  */
 export default function SplashScreen() {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/(auth)/login" as any);
-    }, 1000);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 1000));
+    Promise.all([getCurrentSession(), minDelay]).then(([result]) => {
+      if (cancelled) return;
+      if (result.session) {
+        router.replace("/(tabs)" as any);
+      } else {
+        router.replace("/(auth)/login" as any);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

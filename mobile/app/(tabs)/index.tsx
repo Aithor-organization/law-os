@@ -1,44 +1,65 @@
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ScrollView, Text, View, Pressable, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { listConversations, type Conversation } from "@/lib/conversations";
 
-// 대화 목록 (Conversation List) — 데모: 모든 항목이 active chat으로 이동
-const CONVERSATIONS = [
-  {
-    id: "1",
-    title: "민법 750조 불법행위 요건",
-    preview: "불법행위가 성립하려면 고의 또는 과실이...",
-    time: "2분 전",
-    mode: "normal" as const,
-    count: 5,
-  },
-  {
-    id: "2",
-    title: "Deep Debate: 채권자대위권",
-    preview: "원고측: 채권자는 자신의 이름으로...",
-    time: "1시간 전",
-    mode: "debate" as const,
-    count: 12,
-  },
-  {
-    id: "3",
-    title: "형법 제250조 살인죄",
-    preview: "고의와 과실의 구분이 핵심이며...",
-    time: "어제",
-    mode: "normal" as const,
-    count: 8,
-  },
-  {
-    id: "4",
-    title: "헌법 기본권 제한",
-    preview: "비례의 원칙에 따라 목적의 정당성...",
-    time: "3일 전",
-    mode: "normal" as const,
-    count: 3,
-  },
-];
+type Filter = "all" | "normal" | "debate" | "archived";
+
+function formatRelative(iso: string | null, createdAt: string): string {
+  const source = iso ?? createdAt;
+  const then = new Date(source).getTime();
+  const diffMin = Math.floor((Date.now() - then) / 60000);
+  if (diffMin < 1) return "방금 전";
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}시간 전`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "어제";
+  if (diffDay < 7) return `${diffDay}일 전`;
+  return new Date(source).toLocaleDateString("ko-KR");
+}
 
 export default function ChatListScreen() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const load = useCallback(async () => {
+    const { data, error: err } = await listConversations();
+    if (err) {
+      setError(err.message);
+    } else {
+      setError(null);
+      setConversations(data);
+    }
+  }, []);
+
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+  }, [load]);
+
+  // Refresh when the tab gains focus (after creating a conversation elsewhere).
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const filtered = conversations.filter((c) => {
+    if (filter === "all") return true;
+    if (filter === "archived") return c.archived_at !== null;
+    return c.mode === filter;
+  });
+
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
       {/* Header */}
@@ -60,22 +81,57 @@ export default function ChatListScreen() {
 
       {/* Filter tabs */}
       <View className="flex-row gap-4 border-b border-white/5 px-6 py-3">
-        {["전체", "일반", "Deep Debate", "보관함"].map((t, i) => (
-          <Pressable key={t}>
+        {(
+          [
+            { key: "all", label: "전체" },
+            { key: "normal", label: "일반" },
+            { key: "debate", label: "Deep Debate" },
+            { key: "archived", label: "보관함" },
+          ] as { key: Filter; label: string }[]
+        ).map((t) => (
+          <Pressable key={t.key} onPress={() => setFilter(t.key)}>
             <Text
               className={`font-mono text-xs uppercase ${
-                i === 0 ? "text-violet-glow" : "text-dim"
+                filter === t.key ? "text-violet-glow" : "text-dim"
               }`}
             >
-              {t}
+              {t.label}
             </Text>
           </Pressable>
         ))}
       </View>
 
       {/* List */}
-      <ScrollView className="flex-1 px-6 pt-4">
-        {CONVERSATIONS.map((conv) => (
+      <ScrollView
+        className="flex-1 px-6 pt-4"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A855F7" />
+        }
+      >
+        {error && (
+          <View className="mb-4 rounded border border-danger/40 bg-danger/10 p-3">
+            <Text className="font-mono text-[10px] text-danger">// {error}</Text>
+          </View>
+        )}
+
+        {loading && !error && (
+          <Text className="mt-12 text-center font-mono text-[10px] text-dim">
+            // loading...
+          </Text>
+        )}
+
+        {!loading && filtered.length === 0 && !error && (
+          <View className="mt-16 items-center">
+            <Text className="font-mono text-[10px] uppercase text-dim">
+              // no conversations yet
+            </Text>
+            <Text className="mt-2 font-kr text-sm text-dim">
+              우측 상단의 + 를 눌러 첫 대화를 시작하세요
+            </Text>
+          </View>
+        )}
+
+        {filtered.map((conv) => (
           <Pressable
             key={conv.id}
             onPress={() => router.push(`/chat/${conv.id}` as any)}
@@ -92,16 +148,15 @@ export default function ChatListScreen() {
                   className="font-kr text-base font-semibold text-fg"
                   numberOfLines={1}
                 >
-                  {conv.title}
-                </Text>
-                <Text className="mt-1 font-kr text-xs text-dim" numberOfLines={2}>
-                  {conv.preview}
+                  {conv.title || "제목 없음"}
                 </Text>
                 <Text className="mt-2 font-mono text-[10px] text-cyan">
-                  // {conv.count} messages
+                  // {conv.message_count} messages
                 </Text>
               </View>
-              <Text className="font-mono text-[10px] text-dim">{conv.time}</Text>
+              <Text className="font-mono text-[10px] text-dim">
+                {formatRelative(conv.last_message_at, conv.created_at)}
+              </Text>
             </View>
           </Pressable>
         ))}

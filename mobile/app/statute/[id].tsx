@@ -1,55 +1,113 @@
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+
+import { isBookmarked, toggleBookmark } from "@/lib/bookmarks";
+import { getStatuteDetail, type StatuteDetail } from "@/lib/statutes";
 
 /**
  * 🎨 Stitch Reference: projects/7657386961511176864/screens/bc5c1098ac194cc9a3dd95688c4bb06a
  * Statute Detail — Dark Academia Pro
  */
 
-// Mock data. 실제 구현 시 /statutes/:id API 응답으로 대체.
-const STATUTE = {
-  code: "civil",
-  codeKr: "민법",
-  part: "제3편 채권",
-  chapter: "제5장 불법행위",
-  articleNo: "제750조",
-  title: "불법행위의 내용",
-  text: "고의 또는 과실로 인한 위법행위로 타인에게 손해를 가한 자는 그 손해를 배상할 책임이 있다.",
-  effectiveFrom: "1960-01-01",
-  lastSynced: "2026-01-15",
+const COURT_LABEL: Record<string, string> = {
+  supreme: "대법원",
+  constitutional: "헌법재판소",
+  high: "고등법원",
+  district: "지방법원",
 };
 
-const RELATED_CASES = [
-  {
-    caseNo: "2018다12345",
-    decidedAt: "2020-03-15",
-    summary:
-      "불법행위 성립요건으로서 고의 또는 과실의 판단은 행위 당시를 기준으로 하며...",
-    court: "대법원",
-  },
-  {
-    caseNo: "2019다67890",
-    decidedAt: "2021-05-20",
-    summary:
-      "전문가의 과실 판단에는 해당 직업군에 요구되는 평균적 주의의무가 적용되며...",
-    court: "대법원",
-  },
-  {
-    caseNo: "2020다11111",
-    decidedAt: "2022-09-10",
-    summary:
-      "손해배상 범위는 상당인과관계가 있는 범위 내로 제한되며, 예외적으로...",
-    court: "대법원",
-  },
-];
-
 export default function StatuteDetailScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const statuteId = Array.isArray(id) ? id[0] : id;
+  const [statute, setStatute] = useState<StatuteDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+
+  useEffect(() => {
+    if (!statuteId) return;
+
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      const [detailResult, bookmarkState] = await Promise.all([
+        getStatuteDetail(statuteId),
+        isBookmarked({ sourceType: "statute", sourceId: statuteId }),
+      ]);
+      if (cancelled) return;
+
+      setLoading(false);
+      setBookmarked(bookmarkState);
+      if (detailResult.error || !detailResult.data) {
+        setError(detailResult.error?.message ?? "조문을 불러오지 못했습니다.");
+        return;
+      }
+
+      setStatute(detailResult.data);
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [statuteId]);
+
+  const onToggleBookmark = useCallback(async () => {
+    if (!statuteId || bookmarkBusy) return;
+    setBookmarkBusy(true);
+    const previous = bookmarked;
+    // Optimistic toggle.
+    setBookmarked(!previous);
+    const { bookmarked: next, error: bookmarkError } = await toggleBookmark({
+      sourceType: "statute",
+      sourceId: statuteId,
+    });
+    setBookmarkBusy(false);
+    if (bookmarkError) {
+      setBookmarked(previous);
+      Alert.alert("북마크 실패", bookmarkError.message);
+      return;
+    }
+    setBookmarked(next);
+  }, [statuteId, bookmarked, bookmarkBusy]);
+
+  const onShare = useCallback(async () => {
+    if (!statute) return;
+    const header = `${statute.codeKr} ${statute.articleNo}${
+      statute.title ? ` (${statute.title})` : ""
+    }`;
+    try {
+      await Share.share({
+        title: header,
+        message: `${header}\n\n${statute.body}\n\n— LAW.OS`,
+      });
+    } catch (shareError) {
+      Alert.alert(
+        "공유 실패",
+        shareError instanceof Error ? shareError.message : String(shareError),
+      );
+    }
+  }, [statute]);
+
+  const seedPrompt = useMemo(() => {
+    if (!statute) return "";
+    return `${statute.codeKr} ${statute.articleNo} ${statute.title ?? ""}에 대해 핵심 요건과 학습 포인트를 설명해줘`;
+  }, [statute]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
-      {/* ═══ HEADER ═══ */}
       <View className="flex-row items-center justify-between border-b border-white/5 px-4 py-3">
         <Pressable
           onPress={() => router.back()}
@@ -58,112 +116,150 @@ export default function StatuteDetailScreen() {
           <Text className="font-mono text-xs text-dim">← back</Text>
         </Pressable>
         <Text className="font-mono text-[10px] uppercase text-cyan">
-          // {id}
+          // {statuteId}
         </Text>
         <View className="flex-row gap-2">
-          <Pressable className="h-10 w-10 items-center justify-center">
-            <Text className="font-mono text-sm text-dim">⭐</Text>
+          <Pressable
+            onPress={onToggleBookmark}
+            disabled={bookmarkBusy || !statuteId}
+            accessibilityRole="button"
+            accessibilityLabel={bookmarked ? "북마크 해제" : "북마크 추가"}
+            accessibilityState={{ selected: bookmarked }}
+            className="h-10 w-10 items-center justify-center"
+          >
+            <Text
+              className={`font-mono text-sm ${
+                bookmarked ? "text-violet-glow" : "text-dim"
+              }`}
+            >
+              {bookmarked ? "★" : "☆"}
+            </Text>
           </Pressable>
-          <Pressable className="h-10 w-10 items-center justify-center">
+          <Pressable
+            onPress={onShare}
+            disabled={!statute}
+            accessibilityRole="button"
+            accessibilityLabel="공유"
+            className="h-10 w-10 items-center justify-center"
+          >
             <Text className="font-mono text-sm text-dim">↑</Text>
           </Pressable>
         </View>
       </View>
 
       <ScrollView className="flex-1">
-        {/* ═══ BREADCRUMB BADGE ═══ */}
-        <View className="px-6 pt-6">
-          <View
-            className="self-start rounded border border-violet/30 bg-violet/10 px-3 py-1.5"
-            style={{
-              shadowColor: "#A855F7",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-            }}
-          >
-            <Text className="font-mono text-[10px] uppercase tracking-wider text-violet-glow">
-              {STATUTE.codeKr} · {STATUTE.part} · {STATUTE.chapter}
-            </Text>
+        {loading ? (
+          <View className="items-center px-6 pt-16">
+            <ActivityIndicator size="small" color="#A855F7" />
+            <Text className="mt-4 font-kr text-sm text-dim">조문을 불러오는 중...</Text>
           </View>
-        </View>
-
-        {/* ═══ TITLE ═══ */}
-        <View className="mt-6 px-6">
-          <Text className="font-kr text-4xl font-bold leading-tight tracking-tightest text-fg">
-            {STATUTE.articleNo}
-          </Text>
-          <Text className="mt-2 font-kr text-lg text-dim">
-            ({STATUTE.title})
-          </Text>
-        </View>
-
-        {/* ═══ BODY CARD ═══ */}
-        <View className="mt-6 px-6">
-          <View className="flex-row">
-            <View className="mr-4 w-0.5 rounded-full bg-violet-glow" />
-            <View className="flex-1 rounded bg-surface p-5">
-              <Text className="font-kr text-lg leading-8 text-fg">
-                {STATUTE.text}
-              </Text>
+        ) : error || !statute ? (
+          <View className="px-6 pt-16">
+            <View className="rounded border border-danger/40 bg-danger/10 p-4">
+              <Text className="font-mono text-[10px] text-danger">// {error ?? "statute_not_found"}</Text>
             </View>
           </View>
-        </View>
-
-        {/* ═══ META ═══ */}
-        <View className="mt-4 px-6">
-          <Text className="font-mono text-[10px] text-dim">
-            // {STATUTE.code}-750 · 시행 {STATUTE.effectiveFrom} · 최종{" "}
-            {STATUTE.lastSynced}
-          </Text>
-        </View>
-
-        {/* ═══ RELATED CASES ═══ */}
-        <View className="mt-8 px-6">
-          <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
-            // 관련 판례 ({RELATED_CASES.length})
-          </Text>
-          <View className="mt-3 gap-3">
-            {RELATED_CASES.map((c) => (
-              <Pressable
-                key={c.caseNo}
-                onPress={() => router.push(`/case/${c.caseNo}` as any)}
-                className="rounded border border-white/10 bg-surface p-4"
+        ) : (
+          <>
+            <View className="px-6 pt-6">
+              <View
+                className="self-start rounded border border-violet/30 bg-violet/10 px-3 py-1.5"
+                style={{
+                  shadowColor: "#A855F7",
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                }}
               >
-                <View className="flex-row items-center justify-between">
-                  <Text className="font-mono text-xs text-violet-glow">
-                    {c.court} {c.caseNo}
-                  </Text>
-                  <Text className="font-mono text-[10px] text-dim">
-                    {c.decidedAt}
-                  </Text>
-                </View>
-                <Text
-                  className="mt-2 font-kr text-sm text-fg"
-                  numberOfLines={2}
-                >
-                  {c.summary}
+                <Text className="font-mono text-[10px] uppercase tracking-wider text-violet-glow">
+                  {statute.codeKr}
+                  {statute.part ? ` · ${statute.part}` : ""}
+                  {statute.chapter ? ` · ${statute.chapter}` : ""}
                 </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+              </View>
+            </View>
 
-        {/* Spacer for bottom CTAs */}
-        <View className="h-24" />
+            <View className="mt-6 px-6">
+              <Text className="font-kr text-4xl font-bold leading-tight tracking-tightest text-fg">
+                {statute.articleNo}
+              </Text>
+              <Text className="mt-2 font-kr text-lg text-dim">
+                ({statute.title ?? "제목 없음"})
+              </Text>
+            </View>
+
+            <View className="mt-6 px-6">
+              <View className="flex-row">
+                <View className="mr-4 w-0.5 rounded-full bg-violet-glow" />
+                <View className="flex-1 rounded bg-surface p-5">
+                  <Text className="font-kr text-lg leading-8 text-fg">{statute.body}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View className="mt-4 px-6">
+              <Text className="font-mono text-[10px] text-dim">
+                // {statute.id} · public statute row
+              </Text>
+            </View>
+
+            <View className="mt-8 px-6">
+              <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
+                // 관련 판례 ({statute.relatedCases.length})
+              </Text>
+              <View className="mt-3 gap-3">
+                {statute.relatedCases.length > 0 ? (
+                  statute.relatedCases.map((item) => (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => router.push(`/case/${item.id}` as any)}
+                      className="rounded border border-white/10 bg-surface p-4"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <Text className="font-mono text-xs text-violet-glow">
+                          {(COURT_LABEL[item.court] ?? item.court)} {item.caseNo}
+                        </Text>
+                        <Text className="font-mono text-[10px] text-dim">
+                          {item.decidedAt}
+                        </Text>
+                      </View>
+                      <Text className="mt-2 font-kr text-sm text-fg" numberOfLines={2}>
+                        {item.summary ?? "요약 없음"}
+                      </Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <View className="rounded border border-white/10 bg-surface p-4">
+                    <Text className="font-kr text-sm text-dim">
+                      아직 연결된 판례 데이터가 없습니다. 다음 단계에서 citations / case linkage를 붙일 예정입니다.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View className="h-24" />
+          </>
+        )}
       </ScrollView>
 
-      {/* ═══ BOTTOM CTAS (fixed) ═══ */}
       <View className="border-t border-white/5 bg-surface-low px-4 py-3">
         <View className="flex-row gap-2">
           <Pressable
-            onPress={() => router.push(`/chat/statute-${id}` as any)}
+            onPress={() =>
+              router.push({
+                pathname: "/chat/new",
+                params: { seed: seedPrompt },
+              } as any)
+            }
+            disabled={!statute}
             className="flex-1 h-12 flex-row items-center justify-center rounded bg-violet"
             style={{
               shadowColor: "#A855F7",
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.4,
               shadowRadius: 16,
+              opacity: statute ? 1 : 0.5,
             }}
           >
             <Text className="font-kr text-sm font-semibold text-white">

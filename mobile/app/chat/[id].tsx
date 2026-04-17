@@ -1,8 +1,18 @@
-import { useState } from "react";
-import { ScrollView, Text, View, Pressable, TextInput } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlatList,
+  Text,
+  View,
+  Pressable,
+  TextInput,
+  ActivityIndicator,
+  type ListRenderItem,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import Markdown from "react-native-markdown-display";
+import { listMessages, type Message } from "@/lib/conversations";
+import { sendChatMessage, type ChatTier } from "@/lib/chat";
 
 // Dark Academia Pro markdown styles
 const markdownStyles = {
@@ -12,14 +22,8 @@ const markdownStyles = {
     fontSize: 14,
     lineHeight: 24,
   },
-  strong: {
-    color: "#F4F4F5",
-    fontFamily: "Pretendard-Bold",
-  },
-  em: {
-    color: "#DDB7FF",
-    fontStyle: "italic" as const,
-  },
+  strong: { color: "#F4F4F5", fontFamily: "Pretendard-Bold" },
+  em: { color: "#DDB7FF", fontStyle: "italic" as const },
   bullet_list: { marginTop: 4 },
   ordered_list: { marginTop: 4 },
   list_item: { color: "#F4F4F5", fontFamily: "Pretendard", marginBottom: 2 },
@@ -33,45 +37,263 @@ const markdownStyles = {
   },
 };
 
-/**
- * 🎨 Stitch Reference: projects/7657386961511176864/screens/252821e0257346ba9b713d333b3054df
- * Active Chat (Obsidian Terminal)
- *
- * Demo: 모든 버튼/출처/피드백이 네비게이션으로 연결되어 있습니다. 로직 미연결.
- */
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+}
 
-type Msg =
-  | { role: "user"; content: string; time: string }
-  | {
-      role: "assistant";
-      content: string;
-      citations: { label: string; type: "statute" | "case"; id: string }[];
-      time: string;
-    };
-
-const MESSAGES: Msg[] = [
-  {
-    role: "user",
-    content: "민법 750조의 불법행위 성립요건이 뭐야?",
-    time: "오후 3:42",
-  },
-  {
-    role: "assistant",
-    content:
-      "민법 제750조에 따른 불법행위가 성립하려면 다음 **4가지 요건**이 충족되어야 합니다.\n\n1. **고의 또는 과실** — 가해자의 주관적 요건\n2. **위법성** — 법질서 전체에 비추어 허용되지 않는 행위\n3. **책임능력** — 자기 행위의 결과를 변식할 수 있는 능력\n4. **손해의 발생과 인과관계** — 실제 손해와 가해행위 간 상당인과관계\n\n대법원은 과실의 판단 기준으로 [판례 1] '통상의 주의의무'를 제시하고 있으며, 최근 [판례 2]에서는 직업별 전문가의 높은 주의의무를 강조했습니다.",
-    citations: [
-      { label: "조문 1", type: "statute", id: "civil-750" },
-      { label: "판례 1", type: "case", id: "2018da12345" },
-      { label: "판례 2", type: "case", id: "2019da201528" },
-    ],
-    time: "오후 3:42",
-  },
-];
+type StreamingItem = { id: "__streaming__"; kind: "streaming" };
+type ListItem = (Message & { kind: "message" }) | StreamingItem;
 
 export default function ActiveChatScreen() {
-  const { id } = useLocalSearchParams();
-  const [mode, setMode] = useState<"normal" | "debate">("normal");
+  const { id, seed } = useLocalSearchParams<{ id: string; seed?: string }>();
+  const [mode, setMode] = useState<ChatTier>("flash");
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [streaming, setStreaming] = useState(false);
+  // Partial assistant response while streaming (not yet persisted).
+  const [streamBuffer, setStreamBuffer] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const listRef = useRef<FlatList<ListItem>>(null);
+  const seedSentRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!id) return;
+    const { data, error } = await listMessages(id);
+    if (error) {
+      setLoadError(error.message);
+      return;
+    }
+    setMessages(data);
+  }, [id]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Abort any in-flight stream on unmount.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
+  const scrollToEnd = useCallback(() => {
+    listRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  // Auto-scroll on new messages / streaming chunks.
+  useEffect(() => {
+    const timeout = setTimeout(scrollToEnd, 50);
+    return () => clearTimeout(timeout);
+  }, [messages, streamBuffer, scrollToEnd]);
+
+  const handleSend = useCallback(
+    async (text: string) => {
+      if (!id || !text.trim() || streaming) return;
+
+      // Cancel previous stream if any (defensive — UI already disables send).
+      abortRef.current?.abort();
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      setInput("");
+      setStreaming(true);
+      setStreamBuffer("");
+
+      const { error, aborted } = await sendChatMessage({
+        conversationId: id,
+        message: text.trim(),
+        tier: mode,
+        signal: controller.signal,
+        handlers: {
+          onChunk: (chunk) => setStreamBuffer((prev) => prev + chunk),
+          onError: (err) => setLoadError(err),
+        },
+      });
+
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+      setStreaming(false);
+      setStreamBuffer("");
+      if (error && !aborted) {
+        setLoadError(error.message);
+      }
+      if (!aborted) {
+        // Re-fetch to get the persisted user + assistant messages with real ids.
+        await refresh();
+      }
+    },
+    [id, mode, streaming, refresh],
+  );
+
+  // If arriving with a `seed` query param from /chat/new, send it once.
+  useEffect(() => {
+    if (seedSentRef.current || !seed || streaming || messages.length > 0) return;
+    seedSentRef.current = true;
+    handleSend(seed);
+  }, [seed, streaming, messages.length, handleSend]);
+
+  const listData: ListItem[] = useMemo(() => {
+    const items: ListItem[] = messages.map((msg) => ({ ...msg, kind: "message" }));
+    if (streaming) {
+      items.push({ id: "__streaming__", kind: "streaming" });
+    }
+    return items;
+  }, [messages, streaming]);
+
+  const renderItem: ListRenderItem<ListItem> = useCallback(
+    ({ item }) => {
+      if (item.kind === "streaming") {
+        return (
+          <View className="mb-6">
+            <View className="mb-2 flex-row items-center gap-2">
+              <View className="h-6 w-6 items-center justify-center rounded-full bg-violet/20">
+                <Text className="font-mono text-[10px] text-violet-glow">AI</Text>
+              </View>
+              <Text className="font-mono text-[10px] uppercase text-dim">
+                law.os · {mode}
+              </Text>
+              <ActivityIndicator size="small" color="#A855F7" />
+            </View>
+            <View className="flex-row">
+              <View className="mr-3 w-0.5 rounded-full bg-violet" />
+              <View className="flex-1 rounded bg-surface p-4">
+                {streamBuffer.length > 0 ? (
+                  <Markdown style={markdownStyles}>{streamBuffer}</Markdown>
+                ) : (
+                  <Text className="font-mono text-[10px] text-dim">
+                    // 응답 생성 중...
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+        );
+      }
+
+      const msg = item;
+      if (msg.role === "user") {
+        return (
+          <View className="mb-6 items-end">
+            <View className="max-w-[80%] rounded bg-surface-high px-4 py-3">
+              <Text className="font-kr text-sm text-fg">{msg.content}</Text>
+            </View>
+            <Text className="mt-1 font-mono text-[10px] text-dim">
+              {formatTime(msg.created_at)}
+            </Text>
+          </View>
+        );
+      }
+
+      return (
+        <View className="mb-6">
+          <View className="mb-2 flex-row items-center gap-2">
+            <View className="h-6 w-6 items-center justify-center rounded-full bg-violet/20">
+              <Text className="font-mono text-[10px] text-violet-glow">AI</Text>
+            </View>
+            <Text className="font-mono text-[10px] uppercase text-dim">
+              law.os · {msg.model ?? "gemini"}
+            </Text>
+          </View>
+          <View className="flex-row">
+            <View className="mr-3 w-0.5 rounded-full bg-violet" />
+            <View className="flex-1 rounded bg-surface p-4">
+              <Markdown style={markdownStyles}>{msg.content}</Markdown>
+              {msg.citations.length > 0 && (
+                <View className="mt-4 gap-2 border-t border-white/5 pt-4">
+                  <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
+                    // citations · {msg.citations.length}
+                  </Text>
+                  {msg.citations.map((citation) => (
+                    <Pressable
+                      key={citation.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${citation.source_type === "statute" ? "조문" : "판례"} ${citation.label}`}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/modals/citation",
+                          params: {
+                            sourceType: citation.source_type,
+                            sourceId: citation.source_id,
+                            snippet: citation.snippet,
+                            score: citation.score != null ? String(citation.score) : "",
+                            label: citation.label,
+                            subtitle: citation.subtitle ?? "",
+                          },
+                        } as any)
+                      }
+                      className="rounded border border-white/10 bg-surface-low p-3"
+                    >
+                      <Text className="font-mono text-[10px] uppercase text-violet-glow">
+                        {citation.source_type === "statute" ? "조문" : "판례"}
+                      </Text>
+                      <Text className="mt-1 font-kr text-sm font-semibold text-fg">
+                        {citation.label}
+                      </Text>
+                      {citation.subtitle && (
+                        <Text className="mt-1 font-mono text-[10px] text-dim">
+                          {citation.subtitle}
+                        </Text>
+                      )}
+                      <Text
+                        className="mt-2 font-kr text-xs leading-5 text-dim"
+                        numberOfLines={3}
+                      >
+                        {citation.snippet}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              <Text className="mt-3 font-mono text-[10px] text-dim">
+                {formatTime(msg.created_at)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      );
+    },
+    [mode, streamBuffer],
+  );
+
+  const listEmpty = useMemo(() => {
+    if (streaming || seed) return null;
+    return (
+      <View className="mt-12 items-center">
+        <Text className="font-mono text-[10px] uppercase text-dim">// empty</Text>
+        <Text className="mt-2 font-kr text-sm text-dim">
+          첫 질문을 입력해 대화를 시작하세요
+        </Text>
+      </View>
+    );
+  }, [streaming, seed]);
+
+  const listFooter = useMemo(
+    () => (
+      <View className="mt-2 items-center">
+        <Text className="font-mono text-[10px] text-dim">
+          // 학습 참고용 · 실제 분쟁은 변호사 상담 필요
+        </Text>
+      </View>
+    ),
+    [],
+  );
+
+  const listHeader = useMemo(() => {
+    if (!loadError) return null;
+    return (
+      <View className="mb-4 rounded border border-danger/40 bg-danger/10 p-3">
+        <Text className="font-mono text-[10px] text-danger">
+          // error: {loadError}
+        </Text>
+      </View>
+    );
+  }, [loadError]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
@@ -79,20 +301,24 @@ export default function ActiveChatScreen() {
       <View className="flex-row items-center justify-between border-b border-white/5 px-4 py-3">
         <Pressable
           onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로가기"
           className="h-10 w-10 items-center justify-center"
         >
           <Text className="font-mono text-xs text-dim">← back</Text>
         </Pressable>
         <View className="flex-1 items-center">
           <Text className="font-kr text-sm font-semibold text-fg" numberOfLines={1}>
-            민법 750조 불법행위
+            LAW.OS
           </Text>
           <Text className="font-mono text-[10px] text-cyan">
-            // conv · {id}
+            // conv · {id?.slice(0, 8)}
           </Text>
         </View>
         <Pressable
           onPress={() => router.push("/modals/save-note" as any)}
+          accessibilityRole="button"
+          accessibilityLabel="더보기"
           className="h-10 w-10 items-center justify-center"
         >
           <Text className="font-mono text-xs text-dim">⋯</Text>
@@ -101,130 +327,52 @@ export default function ActiveChatScreen() {
 
       {/* Mode toggle */}
       <View className="flex-row items-center justify-center gap-3 border-b border-white/5 px-6 py-2">
-        <Pressable onPress={() => setMode("normal")}>
+        <Pressable
+          onPress={() => setMode("flash")}
+          accessibilityRole="button"
+          accessibilityLabel="Flash 모드"
+        >
           <Text
             className={`font-mono text-[10px] uppercase tracking-wider ${
-              mode === "normal" ? "text-violet-glow" : "text-dim"
+              mode === "flash" ? "text-violet-glow" : "text-dim"
             }`}
           >
-            // normal
+            // flash · 빠름
           </Text>
         </Pressable>
         <Text className="text-dim">·</Text>
-        <Pressable onPress={() => setMode("debate")}>
+        <Pressable
+          onPress={() => setMode("pro")}
+          accessibilityRole="button"
+          accessibilityLabel="Pro 모드"
+        >
           <Text
             className={`font-mono text-[10px] uppercase tracking-wider ${
-              mode === "debate" ? "text-violet-glow" : "text-dim"
+              mode === "pro" ? "text-violet-glow" : "text-dim"
             }`}
           >
-            ⚖️ deep debate
+            ⚖️ pro · 고품질
           </Text>
         </Pressable>
       </View>
 
       {/* ═══ MESSAGES ═══ */}
-      <ScrollView
-        className="flex-1"
+      <FlatList
+        ref={listRef}
+        data={listData}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
         contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 16 }}
-      >
-        {MESSAGES.map((msg, i) => (
-          <View key={i} className="mb-6">
-            {msg.role === "user" ? (
-              <View className="items-end">
-                <View className="max-w-[80%] rounded bg-surface-high px-4 py-3">
-                  <Text className="font-kr text-sm text-fg">{msg.content}</Text>
-                </View>
-                <Text className="mt-1 font-mono text-[10px] text-dim">
-                  {msg.time}
-                </Text>
-              </View>
-            ) : (
-              <View>
-                {/* Assistant header */}
-                <View className="mb-2 flex-row items-center gap-2">
-                  <View className="h-6 w-6 items-center justify-center rounded-full bg-violet/20">
-                    <Text className="font-mono text-[10px] text-violet-glow">
-                      AI
-                    </Text>
-                  </View>
-                  <Text className="font-mono text-[10px] uppercase text-dim">
-                    law.os · claude sonnet 4.5
-                  </Text>
-                </View>
-
-                {/* Body with violet accent bar */}
-                <View className="flex-row">
-                  <View className="mr-3 w-0.5 rounded-full bg-violet" />
-                  <View className="flex-1 rounded bg-surface p-4">
-                    <Markdown style={markdownStyles}>{msg.content}</Markdown>
-
-                    {/* Citations */}
-                    <View className="mt-4 gap-2 border-t border-white/5 pt-3">
-                      <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
-                        // 출처 ({msg.citations.length})
-                      </Text>
-                      {msg.citations.map((c) => (
-                        <Pressable
-                          key={c.label}
-                          onPress={() =>
-                            router.push(
-                              c.type === "statute"
-                                ? (`/statute/${c.id}` as any)
-                                : (`/case/${c.id}` as any),
-                            )
-                          }
-                          className="flex-row items-center gap-2 rounded border border-white/10 bg-surface-low px-3 py-2"
-                        >
-                          <Text className="font-mono text-[10px] text-violet-glow">
-                            [{c.label}]
-                          </Text>
-                          <Text className="flex-1 font-kr text-xs text-fg">
-                            {c.type === "statute"
-                              ? "민법 제750조 (불법행위의 내용)"
-                              : c.id.startsWith("2018")
-                                ? "대법원 2018다12345"
-                                : "대법원 2019다201528"}
-                          </Text>
-                          <Text className="font-mono text-[10px] text-dim">→</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-
-                    {/* Feedback */}
-                    <View className="mt-3 flex-row items-center justify-between">
-                      <View className="flex-row gap-2">
-                        <Pressable
-                          onPress={() => router.push("/modals/save-note" as any)}
-                          className="rounded border border-white/10 px-3 py-1"
-                        >
-                          <Text className="font-mono text-[10px] text-fg">
-                            👍 helpful
-                          </Text>
-                        </Pressable>
-                        <Pressable className="rounded border border-white/10 px-3 py-1">
-                          <Text className="font-mono text-[10px] text-fg">
-                            👎 issue
-                          </Text>
-                        </Pressable>
-                      </View>
-                      <Text className="font-mono text-[10px] text-dim">
-                        {msg.time}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-        ))}
-
-        {/* Disclaimer footer */}
-        <View className="mt-2 items-center">
-          <Text className="font-mono text-[10px] text-dim">
-            // 학습 참고용 · 실제 분쟁은 변호사 상담 필요
-          </Text>
-        </View>
-      </ScrollView>
+        className="flex-1"
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        onContentSizeChange={scrollToEnd}
+        removeClippedSubviews
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+      />
 
       {/* ═══ INPUT BAR ═══ */}
       <View className="border-t border-white/5 bg-surface-low px-4 py-3">
@@ -236,16 +384,21 @@ export default function ActiveChatScreen() {
               placeholder="질문을 입력하세요..."
               placeholderTextColor="#71717A"
               multiline
+              editable={!streaming}
+              accessibilityLabel="질문 입력"
               className="min-h-[44px] max-h-[120px] px-3 py-3 font-kr text-sm text-fg"
               style={{ outlineStyle: "none" } as any}
             />
           </View>
           <Pressable
-            onPress={() => {
-              /* demo */
-              setInput("");
-            }}
-            className="h-11 w-11 items-center justify-center rounded bg-violet"
+            onPress={() => handleSend(input)}
+            disabled={streaming || input.trim().length === 0}
+            accessibilityRole="button"
+            accessibilityLabel="메시지 전송"
+            accessibilityState={{ disabled: streaming || input.trim().length === 0 }}
+            className={`h-11 w-11 items-center justify-center rounded ${
+              streaming || input.trim().length === 0 ? "bg-surface-high" : "bg-violet"
+            }`}
             style={{
               shadowColor: "#A855F7",
               shadowOffset: { width: 0, height: 0 },
@@ -258,9 +411,13 @@ export default function ActiveChatScreen() {
         </View>
         <View className="mt-2 flex-row items-center justify-between">
           <Text className="font-mono text-[10px] text-dim">
-            // free · 9/10 today
+            // gemini · {mode}
           </Text>
-          <Pressable onPress={() => router.push("/modals/paywall" as any)}>
+          <Pressable
+            onPress={() => router.push("/modals/paywall" as any)}
+            accessibilityRole="link"
+            accessibilityLabel="업그레이드"
+          >
             <Text className="font-mono text-[10px] text-violet-glow">
               upgrade →
             </Text>

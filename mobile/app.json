@@ -2,7 +2,7 @@
   "expo": {
     "name": "LAW.OS",
     "slug": "law-os",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "lawos",
@@ -13,16 +13,28 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "kr.lawos.app"
+      "bundleIdentifier": "kr.lawos.app",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "판례 사진 등을 기록할 때 카메라에 접근합니다. 사용하지 않으면 거부하셔도 무방합니다.",
+        "NSPhotoLibraryUsageDescription": "판례 사진을 저장하거나 불러올 때 사진 접근 권한이 필요합니다. 사용하지 않으면 거부하셔도 무방합니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "kr.lawos.app"
+      "package": "kr.lawos.app",
+      "versionCode": 1,
+      "permissions": ["android.permission.INTERNET"]
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +43,18 @@
     "plugins": ["expo-router", "expo-font"],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "SET-ON-FIRST-EAS-BUILD"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/SET-AFTER-EAS-INIT"
+    },
+    "owner": "SET-YOUR-EXPO-USERNAME"
   }
 }

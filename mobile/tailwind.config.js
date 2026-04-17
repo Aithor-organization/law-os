@@ -3,6 +3,10 @@
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  // NativeWind web runtime throws if dark mode remains `media` while it tries
+  // to sync color scheme state after stylesheet injection. We use a dark-only
+  // app theme, so `class` mode is the safer web setting for development.
+  darkMode: "class",
   theme: {
     extend: {
       colors: {

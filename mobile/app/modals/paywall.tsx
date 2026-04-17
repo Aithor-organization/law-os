@@ -49,8 +49,8 @@ export default function PaywallModal() {
         style={{
           backgroundColor: "#A855F7",
           opacity: 0.08,
+          pointerEvents: "none",
         }}
-        pointerEvents="none"
       />
 
       <ScrollView className="flex-1">

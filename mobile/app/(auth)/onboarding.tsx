@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/Button";
+import { saveOnboarding, type UserType } from "@/lib/auth";
 
 /**
  * 🎨 Stitch Reference:
@@ -29,9 +30,10 @@ const USER_TYPES = [
 
 export default function OnboardingScreen() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [userType, setUserType] = useState<string | null>(null);
+  const [userType, setUserType] = useState<UserType | null>(null);
   const [goal, setGoal] = useState<string | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const toggleSubject = (code: string) => {
     setSelectedSubjects((prev) =>
@@ -39,12 +41,28 @@ export default function OnboardingScreen() {
     );
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 3) {
       setStep((s) => (s + 1) as 1 | 2 | 3);
-    } else {
-      router.replace("/(tabs)" as any);
+      return;
     }
+    if (!userType) {
+      Alert.alert("선택 필요", "학년을 선택해주세요.");
+      setStep(1);
+      return;
+    }
+    setSaving(true);
+    const { error } = await saveOnboarding({
+      userType,
+      studyGoal: goal,
+      subjects: selectedSubjects,
+    });
+    setSaving(false);
+    if (error) {
+      Alert.alert("저장 실패", error.message);
+      return;
+    }
+    router.replace("/(tabs)" as any);
   };
 
   const canProceed =
@@ -98,7 +116,7 @@ export default function OnboardingScreen() {
               {USER_TYPES.map((t) => (
                 <Pressable
                   key={t.code}
-                  onPress={() => setUserType(t.code)}
+                  onPress={() => setUserType(t.code as UserType)}
                   className={`flex-row items-center justify-between rounded border px-4 py-4 ${
                     userType === t.code
                       ? "border-violet bg-violet/10"
@@ -260,9 +278,9 @@ export default function OnboardingScreen() {
         <Button
           variant="primary"
           onPress={handleNext}
-          disabled={!canProceed}
+          disabled={!canProceed || saving}
         >
-          {step === 3 ? "LAW.OS 시작하기" : "다음"}
+          {saving ? "저장 중..." : step === 3 ? "LAW.OS 시작하기" : "다음"}
         </Button>
       </View>
     </SafeAreaView>

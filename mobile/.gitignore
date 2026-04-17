@@ -8,3 +8,8 @@ expo-env.d.ts
 .DS_Store
 ios/
 android/
+
+# env — never commit real keys
+.env
+.env.local
+.env.*.local

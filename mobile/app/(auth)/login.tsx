@@ -1,22 +1,37 @@
 import { useState } from "react";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { signInWithEmail } from "@/lib/auth";
 
 /**
- * 🎨 Stitch Reference: projects/7657386961511176864/screens/3f20490d4b48480aa10157ce29d13fe4
- * Design: Dark Academia Pro / Sovereign Terminal
+ * Login Screen — Dark Academia Pro / Sovereign Terminal
  *
- * 🛠 Demo mode: 모든 인증 버튼은 즉시 tabs 홈으로 진입합니다.
+ * Email/password login via Supabase. OAuth providers (Apple/Google/Kakao) are
+ * stubbed — wire them up after configuring providers in Supabase Dashboard.
  */
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const goHome = () => router.replace("/(tabs)" as any);
+  const handleLogin = async () => {
+    if (!email || !password) return;
+    setSubmitting(true);
+    const { error } = await signInWithEmail(email.trim(), password);
+    setSubmitting(false);
+    if (error) {
+      Alert.alert("로그인 실패", error.message);
+      return;
+    }
+    router.replace("/(tabs)" as any);
+  };
+
+  const notImplemented = (provider: string) =>
+    Alert.alert("준비 중", `${provider} 로그인은 곧 지원됩니다.`);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
@@ -80,8 +95,12 @@ export default function LoginScreen() {
         </View>
 
         <View className="mt-10 px-6">
-          <Button variant="primary" onPress={goHome}>
-            로그인 (데모: 바로 진입)
+          <Button
+            variant="primary"
+            onPress={handleLogin}
+            disabled={!email || !password || submitting}
+          >
+            {submitting ? "로그인 중..." : "로그인"}
           </Button>
         </View>
 
@@ -94,13 +113,13 @@ export default function LoginScreen() {
         </View>
 
         <View className="gap-3 px-6">
-          <Button variant="ghost" onPress={goHome}>
+          <Button variant="ghost" onPress={() => notImplemented("Apple")}>
              Apple로 계속하기
           </Button>
-          <Button variant="ghost" onPress={goHome}>
+          <Button variant="ghost" onPress={() => notImplemented("Google")}>
             G Google로 계속하기
           </Button>
-          <Button variant="ghost" onPress={goHome}>
+          <Button variant="ghost" onPress={() => notImplemented("Kakao")}>
             K Kakao로 계속하기
           </Button>
         </View>
