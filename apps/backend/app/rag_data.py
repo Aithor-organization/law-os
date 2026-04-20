@@ -24,6 +24,9 @@ CORE_LAWS: dict[str, str] = {
     "criminal": "형법",
     "constitutional": "헌법",
     "commercial": "상법",
+    "traffic": "도로교통법",
+    "traffic_special": "교통사고처리특례법",
+    "special_aggravated": "특정범죄가중처벌법",
 }
 
 # 일부 법령은 법령정보센터 API가 사용하는 공식 명칭이 CORE_LAWS의 단축 명과 다르다.
@@ -31,6 +34,8 @@ CORE_LAWS: dict[str, str] = {
 # 저장할 때는 원래 단축 명을 code_kr로 유지해서 UI 표시에 영향을 주지 않는다.
 _LAW_API_TITLE_OVERRIDE: dict[str, str] = {
     "constitutional": "대한민국헌법",
+    "traffic_special": "교통사고처리 특례법",
+    "special_aggravated": "특정범죄 가중처벌 등에 관한 법률",
 }
 
 PRECEDENT_SEED_QUERIES: dict[str, list[str]] = {
@@ -53,6 +58,20 @@ PRECEDENT_SEED_QUERIES: dict[str, list[str]] = {
         "주주총회", "이사의 책임", "회사 설립", "합병",
         "주식양도", "배당", "대표이사", "정관",
         "상법상 상행위", "보험", "어음", "수표", "영업양도",
+    ],
+    "traffic": [
+        "신호위반", "음주운전", "무면허운전", "안전운전 의무", "과속",
+        "보행자 보호", "어린이보호구역", "스쿨존", "주정차", "중앙선 침범",
+        "안전거리", "운전자 준수사항", "사고 후 조치",
+    ],
+    "traffic_special": [
+        "교통사고", "교특법", "중상해", "종합보험", "처벌특례",
+        "보행자 보호의무", "12대 중과실", "어린이보호구역 치상",
+    ],
+    "special_aggravated": [
+        "위험운전치사상", "도주차량", "뺑소니", "어린이 치사상",
+        "어린이보호구역 치사", "민식이법", "특가법 제5조의13",
+        "특가법 제5조의11", "음주운전 치사",
     ],
 }
 
@@ -275,6 +294,10 @@ async def _chunked_upsert(
             )
             continue
         if response.status_code not in {200, 201, 204}:
+            logger.error(
+                "chunk upsert failed on %s (offset=%d, size=%d, status=%d): %s",
+                path, offset, len(chunk), response.status_code, response.text[:500],
+            )
             response.raise_for_status()
 
 
