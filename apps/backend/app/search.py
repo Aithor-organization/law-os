@@ -276,10 +276,13 @@ async def _search_statutes_hybrid(
     code: str | None,
     article: int | None,
     limit: int,
+    codes: list[str] | None = None,
 ) -> list[StatuteSearchResult] | None:
     """Attempt hybrid (lexical + vector) search via the
     hybrid_search_statutes RPC. Returns None to signal that the caller
-    should fall back to pure lexical search."""
+    should fall back to pure lexical search.
+
+    ``codes``: 사용자 구독 code 배열 필터 (RAG에서 사용자별 필터링용)."""
     global _HYBRID_DISABLED
     if _HYBRID_DISABLED:
         return None
@@ -294,6 +297,7 @@ async def _search_statutes_hybrid(
         "p_code": code,
         "p_article": article,
         "p_match_count": min(max(limit, 1), 20),
+        "p_codes": codes,
     }
 
     try:
@@ -351,7 +355,13 @@ async def search_statutes(
     code: str | None = None,
     article: int | None = None,
     limit: int = 10,
+    codes: list[str] | None = None,
 ) -> tuple[list[StatuteSearchResult], int, str | None, int | None]:
+    """조문 검색.
+
+    ``codes``: 사용자 구독 law code 배열. 지정 시 해당 code만 대상으로 검색.
+    (RAG에서 user.subscriptions를 전달)
+    """
     normalized_query = _normalize_query(query)
     effective_code = code or _extract_code(normalized_query)
     effective_article = article if article is not None else _extract_article(normalized_query)
@@ -363,6 +373,7 @@ async def search_statutes(
         code=effective_code,
         article=effective_article,
         limit=limit,
+        codes=codes,
     )
     if hybrid_items is not None:
         return hybrid_items, len(hybrid_items), effective_code, effective_article
@@ -375,6 +386,9 @@ async def search_statutes(
 
     if effective_code:
         params["code"] = f"eq.{effective_code}"
+    elif codes:
+        # lexical fallback도 구독 필터 적용 (PostgREST in.() 문법)
+        params["code"] = f"in.({','.join(codes)})"
     if effective_article is not None:
         params["article_no_int"] = f"eq.{effective_article}"
 

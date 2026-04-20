@@ -9,6 +9,7 @@ import { listNotes } from "@/lib/notes";
 
 const QUICK_LINKS: { label: string; href: string }[] = [
   { label: "프로필 편집", href: "/profile/edit" },
+  { label: "내 법령", href: "/profile/laws" },
   { label: "학습 통계", href: "/profile/stats" },
   { label: "알림 설정", href: "/profile/notifications" },
   { label: "법적 정보", href: "/profile/legal" },

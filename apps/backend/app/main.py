@@ -7,7 +7,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI, Header, HTTPException, Request, status
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -17,6 +17,14 @@ from .chat_store import persist_assistant_message
 from .config import get_settings, validate_settings
 from .gemini import stream_chat
 from .http_client import build_client, set_client
+from .law_subscriptions import (
+    get_install_status,
+    ingest_law_on_demand,
+    list_catalog,
+    list_user_subscriptions,
+    subscribe,
+    unsubscribe,
+)
 from .rag import retrieve_rag_context
 from .rag_data import sync_core_statutes, sync_seed_precedents
 from .search import log_search_activity, run_search
@@ -211,7 +219,9 @@ async def chat_endpoint(
 ):
     user = await authenticate_bearer_token(authorization)
     request_id = getattr(http_request.state, "request_id", "unknown")
-    context_blocks, citation_candidates, rag_meta = await retrieve_rag_context(request.message)
+    context_blocks, citation_candidates, rag_meta = await retrieve_rag_context(
+        request.message, user_id=user.user_id
+    )
     logger.info(
         "/chat accepted user_id=%s tier=%s request_id=%s rag_statutes=%s rag_precedents=%s",
         user.user_id,
@@ -275,6 +285,72 @@ async def chat_endpoint(
             "X-Request-Id": request_id,
         },
     )
+
+
+class SubscribeRequest(BaseModel):
+    code: str = Field(min_length=1, max_length=80)
+
+
+@app.get("/laws/catalog")
+async def laws_catalog_endpoint(
+    category: str | None = None,
+    search: str | None = None,
+    limit: int = 200,
+    authorization: str | None = Header(default=None),
+):
+    """법령 카탈로그 조회 (설치 가능한 전체 목록)."""
+    await authenticate_bearer_token(authorization)
+    items = await list_catalog(category=category, search=search, limit=limit)
+    return {"items": items, "total": len(items)}
+
+
+@app.get("/laws/my")
+async def laws_my_endpoint(authorization: str | None = Header(default=None)):
+    """현재 사용자가 구독 중인 법령 목록."""
+    user = await authenticate_bearer_token(authorization)
+    items = await list_user_subscriptions(user.user_id)
+    return {"items": items, "total": len(items)}
+
+
+@app.post("/laws/subscribe")
+async def laws_subscribe_endpoint(
+    request: SubscribeRequest,
+    background: BackgroundTasks,
+    authorization: str | None = Header(default=None),
+):
+    """법령 구독. loaded=false면 백그라운드로 ingest 트리거."""
+    user = await authenticate_bearer_token(authorization)
+    try:
+        result = await subscribe(user.user_id, request.code)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    if result.get("needs_ingestion"):
+        background.add_task(ingest_law_on_demand, request.code)
+        return {"code": request.code, "status": "pending_ingestion", "ingesting": True}
+
+    return {"code": request.code, "status": "ready", "ingesting": False}
+
+
+@app.delete("/laws/subscribe/{code}")
+async def laws_unsubscribe_endpoint(
+    code: str,
+    authorization: str | None = Header(default=None),
+):
+    """법령 구독 해제 (법령 자체는 DB에서 삭제 안 됨)."""
+    user = await authenticate_bearer_token(authorization)
+    await unsubscribe(user.user_id, code)
+    return {"code": code, "status": "unsubscribed"}
+
+
+@app.get("/laws/install-status/{code}")
+async def laws_install_status_endpoint(
+    code: str,
+    authorization: str | None = Header(default=None),
+):
+    """ingest 진행 상태 조회. 앱에서 폴링용."""
+    await authenticate_bearer_token(authorization)
+    return await get_install_status(code)
 
 
 @app.exception_handler(Exception)
