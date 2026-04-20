@@ -20,6 +20,28 @@ _CODE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "criminal": ("형법", "criminal"),
     "constitutional": ("헌법", "constitutional"),
     "commercial": ("상법", "commercial"),
+    # 교통
+    "traffic": ("도로교통법",),
+    "traffic_special": ("교통사고처리특례법", "교통사고처리 특례법", "교특법"),
+    "special_aggravated": ("특정범죄가중처벌법", "특가법", "민식이법"),
+    # Phase 1
+    "civil_proc": ("민사소송법", "민소법"),
+    "criminal_proc": ("형사소송법", "형소법"),
+    "admin_basic": ("행정기본법",),
+    "admin_proc": ("행정소송법",),
+    "housing_rental": ("주택임대차보호법", "주임법"),
+    "labor_standards": ("근로기준법", "근기법"),
+    "privacy": ("개인정보보호법", "개인정보 보호법", "개인정보법"),
+    # Phase 2
+    "commercial_rental": ("상가건물임대차보호법", "상가건물 임대차보호법", "상임법"),
+    "family_proc": ("가사소송법",),
+    "info_network": ("정보통신망법", "정통망법"),
+    "domestic_violence": ("가정폭력처벌특례법", "가정폭력범죄의 처벌", "가폭법"),
+    "sexual_violence": ("성폭력처벌특례법", "성폭력범죄의 처벌", "성폭법"),
+    "youth_protection": ("청소년보호법", "청소년 보호법"),
+    "capital_market": ("자본시장법", "자본시장과 금융투자업"),
+    "bankruptcy": ("채무자회생법", "채무자 회생", "도산법"),
+    "medical": ("의료법",),
 }
 
 _CASE_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
