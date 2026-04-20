@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  FlatList,
-  Text,
-  View,
-  Pressable,
-  TextInput,
   ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  Text,
+  TextInput,
+  View,
   type ListRenderItem,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import Markdown from "react-native-markdown-display";
 import { listMessages, type Message } from "@/lib/conversations";
-import { sendChatMessage, type ChatTier } from "@/lib/chat";
+import { sendChatMessage, type ChatTier, type LawRecommendation } from "@/lib/chat";
+import { subscribeLaw } from "@/lib/laws";
 
 // Dark Academia Pro markdown styles
 const markdownStyles = {
@@ -54,6 +56,8 @@ export default function ActiveChatScreen() {
   // Partial assistant response while streaming (not yet persisted).
   const [streamBuffer, setStreamBuffer] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<LawRecommendation[]>([]);
+  const [installingRec, setInstallingRec] = useState<Set<string>>(new Set());
   const listRef = useRef<FlatList<ListItem>>(null);
   const seedSentRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -103,6 +107,7 @@ export default function ActiveChatScreen() {
       setInput("");
       setStreaming(true);
       setStreamBuffer("");
+      setRecommendations([]);
 
       const { error, aborted } = await sendChatMessage({
         conversationId: id,
@@ -112,6 +117,7 @@ export default function ActiveChatScreen() {
         handlers: {
           onChunk: (chunk) => setStreamBuffer((prev) => prev + chunk),
           onError: (err) => setLoadError(err),
+          onRecommendations: (recs) => setRecommendations(recs),
         },
       });
 
@@ -145,6 +151,32 @@ export default function ActiveChatScreen() {
     }
     return items;
   }, [messages, streaming]);
+
+  const handleInstallRec = useCallback(async (rec: LawRecommendation) => {
+    if (installingRec.has(rec.code)) return;
+    setInstallingRec((prev) => new Set(prev).add(rec.code));
+    try {
+      const result = await subscribeLaw(rec.code);
+      // 설치 후 추천에서 제거
+      setRecommendations((prev) => prev.filter((r) => r.code !== rec.code));
+      if (result.ingesting) {
+        Alert.alert(
+          "설치 시작됨",
+          `${rec.koreanName}의 조문을 가져오는 중입니다. 다음 질문부터 반영됩니다.`,
+        );
+      } else {
+        Alert.alert("설치 완료", `${rec.koreanName}이(가) 추가되었습니다.`);
+      }
+    } catch (e: any) {
+      Alert.alert("설치 실패", e?.message ?? String(e));
+    } finally {
+      setInstallingRec((prev) => {
+        const next = new Set(prev);
+        next.delete(rec.code);
+        return next;
+      });
+    }
+  }, [installingRec]);
 
   const renderItem: ListRenderItem<ListItem> = useCallback(
     ({ item }) => {
@@ -285,15 +317,63 @@ export default function ActiveChatScreen() {
   );
 
   const listHeader = useMemo(() => {
-    if (!loadError) return null;
+    if (!loadError && recommendations.length === 0) return null;
     return (
-      <View className="mb-4 rounded border border-danger/40 bg-danger/10 p-3">
-        <Text className="font-mono text-[10px] text-danger">
-          // error: {loadError}
-        </Text>
+      <View className="mb-4">
+        {loadError ? (
+          <View className="mb-3 rounded border border-danger/40 bg-danger/10 p-3">
+            <Text className="font-mono text-[10px] text-danger">
+              // error: {loadError}
+            </Text>
+          </View>
+        ) : null}
+        {recommendations.map((rec) => {
+          const installing = installingRec.has(rec.code);
+          return (
+            <View
+              key={rec.code}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: "rgba(168,85,247,0.3)",
+                backgroundColor: "rgba(168,85,247,0.08)",
+                borderRadius: 8,
+                marginBottom: 8,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text className="font-kr text-sm text-fg">
+                  📚 {rec.koreanName} 설치 제안
+                </Text>
+                <Text className="mt-1 font-mono text-[10px] text-dim">
+                  {rec.matchedArticle} 관련
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => handleInstallRec(rec)}
+                disabled={installing}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 6,
+                  backgroundColor: installing
+                    ? "rgba(168,85,247,0.3)"
+                    : "#A855F7",
+                }}
+              >
+                <Text className="font-mono text-[10px] text-white">
+                  {installing ? "설치 중..." : "설치"}
+                </Text>
+              </Pressable>
+            </View>
+          );
+        })}
       </View>
     );
-  }, [loadError]);
+  }, [loadError, recommendations, installingRec, handleInstallRec]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>

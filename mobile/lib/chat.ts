@@ -14,9 +14,18 @@ function getChatBaseUrl(): string {
 
 export type ChatTier = "flash" | "pro";
 
+export type LawRecommendation = {
+  code: string;
+  koreanName: string;
+  reason: string;
+  matchedArticle: string;
+  score: number;
+};
+
 export type StreamHandlers = {
   onChunk: (text: string) => void;
   onError?: (error: string) => void;
+  onRecommendations?: (recs: LawRecommendation[]) => void;
 };
 
 function isAbortError(err: unknown): boolean {
@@ -127,6 +136,8 @@ export async function sendChatMessage(params: {
           if (typeof json.text === "string") {
             assistantContent += json.text;
             params.handlers.onChunk(json.text);
+          } else if (Array.isArray(json.recommendations)) {
+            params.handlers.onRecommendations?.(json.recommendations as LawRecommendation[]);
           } else if (typeof json.error === "string") {
             streamError = new Error(json.error);
             params.handlers.onError?.(json.error);

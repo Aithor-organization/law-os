@@ -219,16 +219,17 @@ async def chat_endpoint(
 ):
     user = await authenticate_bearer_token(authorization)
     request_id = getattr(http_request.state, "request_id", "unknown")
-    context_blocks, citation_candidates, rag_meta = await retrieve_rag_context(
+    context_blocks, citation_candidates, rag_meta, recommendations = await retrieve_rag_context(
         request.message, user_id=user.user_id
     )
     logger.info(
-        "/chat accepted user_id=%s tier=%s request_id=%s rag_statutes=%s rag_precedents=%s",
+        "/chat accepted user_id=%s tier=%s request_id=%s rag_statutes=%s rag_precedents=%s rec=%s",
         user.user_id,
         request.tier,
         request_id,
         rag_meta.get("statutes", 0),
         rag_meta.get("precedents", 0),
+        len(recommendations),
     )
 
     async def event_stream():
@@ -236,6 +237,23 @@ async def chat_endpoint(
         assistant_chunks: list[str] = []
         started = time.perf_counter()
         try:
+            # Emit recommendations as a special event (before assistant tokens)
+            # so the UI can render the banner alongside the streaming response.
+            if recommendations:
+                rec_payload = {
+                    "recommendations": [
+                        {
+                            "code": r.code,
+                            "koreanName": r.korean_name,
+                            "reason": r.reason,
+                            "matchedArticle": r.matched_article,
+                            "score": r.score,
+                        }
+                        for r in recommendations
+                    ]
+                }
+                yield f"data: {json.dumps(rec_payload, ensure_ascii=False)}\n\n"
+
             async for chunk in stream_chat(
                 request.message,
                 request.tier,
