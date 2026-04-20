@@ -1,13 +1,27 @@
 import { useState } from "react";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { Alert, ScrollView, Text, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { sendPasswordReset } from "@/lib/auth";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!email || sending) return;
+    setSending(true);
+    const { error } = await sendPasswordReset(email);
+    setSending(false);
+    if (error) {
+      Alert.alert("전송 실패", error.message);
+      return;
+    }
+    setSent(true);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
@@ -43,8 +57,8 @@ export default function ForgotPasswordScreen() {
               />
             </View>
             <View className="mt-10 px-6">
-              <Button variant="primary" onPress={() => setSent(true)} disabled={!email}>
-                재설정 링크 보내기
+              <Button variant="primary" onPress={handleSend} disabled={!email || sending}>
+                {sending ? "전송 중..." : "재설정 링크 보내기"}
               </Button>
             </View>
           </>

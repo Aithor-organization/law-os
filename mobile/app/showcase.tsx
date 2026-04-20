@@ -42,7 +42,8 @@ const SECTIONS: Section[] = [
     title: "Profile",
     items: [
       { label: "Edit Profile", href: "/profile/edit" },
-      { label: "Subscription", href: "/profile/subscription" },
+      { label: "Stats", href: "/profile/stats" },
+      { label: "Notifications", href: "/profile/notifications" },
       { label: "Settings", href: "/profile/settings" },
       { label: "Legal Pages Viewer", href: "/profile/legal" },
     ],
@@ -50,14 +51,10 @@ const SECTIONS: Section[] = [
   {
     title: "Modals",
     items: [
-      { label: "Paywall (quota exceeded)", href: "/modals/paywall" },
       { label: "Citation Detail", href: "/modals/citation" },
       { label: "Save Note", href: "/modals/save-note" },
       { label: "Personal Advice Blocked ⚠️", href: "/modals/blocked" },
       { label: "Logout Confirm", href: "/modals/logout" },
-      { label: "Purchase Success ✓", href: "/modals/purchase-success" },
-      { label: "Purchase Fail ✗", href: "/modals/purchase-fail" },
-      { label: "Export (Anki/PDF)", href: "/modals/export" },
     ],
   },
 ];

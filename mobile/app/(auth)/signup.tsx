@@ -72,24 +72,6 @@ export default function SignupScreen() {
           </Button>
         </View>
 
-        <View className="my-8 flex-row items-center gap-4 px-6">
-          <View className="h-px flex-1 bg-white/10" />
-          <Text className="font-mono text-[10px] uppercase tracking-wider text-dim">또는</Text>
-          <View className="h-px flex-1 bg-white/10" />
-        </View>
-
-        <View className="gap-3 px-6">
-          <Button variant="ghost" onPress={() => router.replace("/(tabs)" as any)}>
-             Apple로 가입
-          </Button>
-          <Button variant="ghost" onPress={() => router.replace("/(tabs)" as any)}>
-            G Google로 가입
-          </Button>
-          <Button variant="ghost" onPress={() => router.replace("/(tabs)" as any)}>
-            K Kakao로 가입
-          </Button>
-        </View>
-
         <View className="mt-10 items-center gap-3 px-6 pb-8">
           <Text className="font-mono text-[10px] text-dim">
             // 법률 학습 도구 · 법률 상담 아님

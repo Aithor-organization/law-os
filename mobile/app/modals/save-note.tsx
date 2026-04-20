@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { ScrollView, Text, View, Pressable, TextInput } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, ScrollView, Text, View, Pressable, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "@/components/ui/Button";
+import { createNote, type NoteSubject } from "@/lib/notes";
 
-type Subject = "civil" | "criminal" | "constitutional" | "commercial" | "other";
-
-const SUBJECTS: { key: Subject; label: string }[] = [
+const SUBJECTS: { key: NoteSubject; label: string }[] = [
   { key: "civil", label: "민법" },
   { key: "criminal", label: "형법" },
   { key: "constitutional", label: "헌법" },
@@ -15,9 +14,46 @@ const SUBJECTS: { key: Subject; label: string }[] = [
 ];
 
 export default function SaveNoteModal() {
-  const [subject, setSubject] = useState<Subject>("civil");
+  const params = useLocalSearchParams<{
+    question?: string;
+    answer?: string;
+    messageId?: string;
+  }>();
+
+  const initialQ = useMemo(() => (params.question ?? "").toString(), [params.question]);
+  const initialA = useMemo(() => (params.answer ?? "").toString(), [params.answer]);
+  const messageId = useMemo(
+    () => (params.messageId ? params.messageId.toString() : null),
+    [params.messageId],
+  );
+
+  const [question, setQuestion] = useState(initialQ);
+  const [answer, setAnswer] = useState(initialA);
+  const [subject, setSubject] = useState<NoteSubject>("civil");
   const [topic, setTopic] = useState("");
   const [starred, setStarred] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const canSave = question.trim().length > 0 && answer.trim().length > 0 && !saving;
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    const { error } = await createNote({
+      question,
+      answer,
+      subject,
+      topic: topic.trim() || null,
+      starred,
+      messageId,
+    });
+    setSaving(false);
+    if (error) {
+      Alert.alert("저장 실패", error.message);
+      return;
+    }
+    router.back();
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
@@ -30,7 +66,7 @@ export default function SaveNoteModal() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         <View className="mt-8 px-6">
           <Text className="font-kr text-3xl font-bold tracking-tightest text-fg">
             서재에 저장
@@ -40,14 +76,36 @@ export default function SaveNoteModal() {
           </Text>
         </View>
 
-        <View className="mx-6 mt-6 rounded-[6px] border border-white/10 bg-surface-high p-4">
-          <Text className="font-mono text-[10px] uppercase text-dim">// preview</Text>
-          <Text className="mt-2 font-kr text-xs leading-5 text-dim">
-            Q. 불법행위의 성립 요건을 알려주세요
+        <View className="mx-6 mt-6">
+          <Text className="font-mono text-[10px] uppercase tracking-wider text-dim">
+            // 질문
           </Text>
-          <Text className="mt-2 font-kr text-xs leading-5 text-fg">
-            A. 민법 제750조에 따라 ① 고의·과실 ② 위법성 ③ 손해 발생 ④ 인과관계...
+          <View className="mt-2 rounded-[6px] border border-white/10 bg-surface-high px-4 py-3">
+            <TextInput
+              value={question}
+              onChangeText={setQuestion}
+              placeholder="예: 불법행위의 성립 요건은?"
+              placeholderTextColor="#52525B"
+              multiline
+              style={{ color: "#F4F4F5", fontSize: 14, minHeight: 40 }}
+            />
+          </View>
+        </View>
+
+        <View className="mx-6 mt-4">
+          <Text className="font-mono text-[10px] uppercase tracking-wider text-dim">
+            // 답변
           </Text>
+          <View className="mt-2 rounded-[6px] border border-white/10 bg-surface-high px-4 py-3">
+            <TextInput
+              value={answer}
+              onChangeText={setAnswer}
+              placeholder="핵심 내용을 요약하여 저장"
+              placeholderTextColor="#52525B"
+              multiline
+              style={{ color: "#F4F4F5", fontSize: 14, minHeight: 80 }}
+            />
+          </View>
         </View>
 
         <View className="mt-8 px-6">
@@ -111,8 +169,8 @@ export default function SaveNoteModal() {
         </Pressable>
 
         <View className="mt-10 gap-3 px-6">
-          <Button variant="primary" onPress={() => router.back()}>
-            저장
+          <Button variant="primary" onPress={handleSave} disabled={!canSave}>
+            {saving ? "저장 중..." : "저장"}
           </Button>
           <Button variant="ghost" onPress={() => router.back()}>
             취소

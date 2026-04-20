@@ -316,9 +316,20 @@ export default function ActiveChatScreen() {
           </Text>
         </View>
         <Pressable
-          onPress={() => router.push("/modals/save-note" as any)}
+          onPress={() => {
+            const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+            const lastUser = [...messages].reverse().find((m) => m.role === "user");
+            router.push({
+              pathname: "/modals/save-note",
+              params: {
+                question: lastUser?.content ?? "",
+                answer: lastAssistant?.content ?? "",
+                messageId: lastAssistant?.id ?? "",
+              },
+            } as any);
+          }}
           accessibilityRole="button"
-          accessibilityLabel="더보기"
+          accessibilityLabel="노트로 저장"
           className="h-10 w-10 items-center justify-center"
         >
           <Text className="font-mono text-xs text-dim">⋯</Text>
@@ -413,15 +424,9 @@ export default function ActiveChatScreen() {
           <Text className="font-mono text-[10px] text-dim">
             // gemini · {mode}
           </Text>
-          <Pressable
-            onPress={() => router.push("/modals/paywall" as any)}
-            accessibilityRole="link"
-            accessibilityLabel="업그레이드"
-          >
-            <Text className="font-mono text-[10px] text-violet-glow">
-              upgrade →
-            </Text>
-          </Pressable>
+          <Text className="font-mono text-[10px] text-cyan">
+            FREE · beta
+          </Text>
         </View>
       </View>
     </SafeAreaView>

@@ -144,13 +144,6 @@ export default function LibraryScreen() {
       <ScrollView className="flex-1">
         <View className="flex-row items-center justify-between px-6 py-4">
           <Text className="font-kr text-2xl font-bold text-fg">서재</Text>
-          <Pressable
-            onPress={() => router.push("/modals/export" as any)}
-            accessibilityRole="link"
-            accessibilityLabel="북마크 내보내기"
-          >
-            <Text className="font-mono text-xs uppercase text-cyan">// export</Text>
-          </Pressable>
         </View>
 
         <View className="mx-6 flex-row items-center justify-between rounded border border-white/10 bg-surface p-4">

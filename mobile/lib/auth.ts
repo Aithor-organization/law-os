@@ -2,6 +2,25 @@ import { supabase } from "./supabase";
 
 export type UserType = "law_school" | "bar_exam" | "undergrad" | "other";
 
+export type Profile = {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string | null;
+  user_type: UserType | null;
+  exam_target_date: string | null;
+  study_goal: string | null;
+  school: string | null;
+  school_year: number | null;
+  locale: string;
+  timezone: string;
+  tos_accepted_at: string | null;
+  privacy_accepted_at: string | null;
+  legal_disclaimer_accepted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export async function signUpWithEmail(params: {
   email: string;
   password: string;
@@ -70,4 +89,92 @@ export async function saveOnboarding(params: {
   // Subjects stored separately via user_favorites or a settings table;
   // for MVP we keep only user_type + study_goal in profiles.
   return { error };
+}
+
+// Fetch the current authenticated user's profile row.
+export async function getProfile(): Promise<{
+  data: Profile | null;
+  error: Error | null;
+}> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) {
+    return { data: null, error: new Error("no active session") };
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return {
+    data: (data as Profile | null) ?? null,
+    error: (error as Error | null) ?? null,
+  };
+}
+
+// Update mutable profile fields. Does NOT change email (user flow handles that).
+export async function updateProfile(params: {
+  name?: string;
+  school?: string | null;
+  school_year?: number | null;
+  study_goal?: string | null;
+  exam_target_date?: string | null;
+  user_type?: UserType | null;
+}): Promise<{ error: Error | null }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return { error: new Error("no active session") };
+
+  // Strip undefined fields so we don't overwrite with null by accident.
+  const patch: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) patch[key] = value;
+  }
+  if (Object.keys(patch).length === 0) return { error: null };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(patch)
+    .eq("id", userId);
+  return { error: error as Error | null };
+}
+
+// Send a password reset email via Supabase. The email contains a magic link
+// that routes back to the app's reset-password screen (configured in Supabase
+// Dashboard → Authentication → URL Configuration → Redirect URLs).
+export async function sendPasswordReset(email: string): Promise<{
+  error: Error | null;
+}> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+  return { error: error as Error | null };
+}
+
+// Update the current user's password (requires an active session — for the
+// case when a user is logged in and wants to change password from settings).
+export async function updatePassword(newPassword: string): Promise<{
+  error: Error | null;
+}> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  return { error: error as Error | null };
+}
+
+// Soft-delete via profiles.deleted_at. Full account deletion requires admin
+// API (server-side) — here we mark the profile and sign out.
+export async function requestAccountDeletion(): Promise<{
+  error: Error | null;
+}> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return { error: new Error("no active session") };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", userId);
+  if (error) return { error: error as Error };
+
+  await supabase.auth.signOut();
+  return { error: null };
 }

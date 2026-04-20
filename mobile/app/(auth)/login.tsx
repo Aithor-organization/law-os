@@ -6,12 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { signInWithEmail } from "@/lib/auth";
 
-/**
- * Login Screen — Dark Academia Pro / Sovereign Terminal
- *
- * Email/password login via Supabase. OAuth providers (Apple/Google/Kakao) are
- * stubbed — wire them up after configuring providers in Supabase Dashboard.
- */
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,9 +23,6 @@ export default function LoginScreen() {
     }
     router.replace("/(tabs)" as any);
   };
-
-  const notImplemented = (provider: string) =>
-    Alert.alert("준비 중", `${provider} 로그인은 곧 지원됩니다.`);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
@@ -101,26 +92,6 @@ export default function LoginScreen() {
             disabled={!email || !password || submitting}
           >
             {submitting ? "로그인 중..." : "로그인"}
-          </Button>
-        </View>
-
-        <View className="my-10 flex-row items-center gap-4 px-6">
-          <View className="h-px flex-1 bg-white/10" />
-          <Text className="font-mono text-[10px] uppercase tracking-wider text-dim">
-            또는 · or
-          </Text>
-          <View className="h-px flex-1 bg-white/10" />
-        </View>
-
-        <View className="gap-3 px-6">
-          <Button variant="ghost" onPress={() => notImplemented("Apple")}>
-             Apple로 계속하기
-          </Button>
-          <Button variant="ghost" onPress={() => notImplemented("Google")}>
-            G Google로 계속하기
-          </Button>
-          <Button variant="ghost" onPress={() => notImplemented("Kakao")}>
-            K Kakao로 계속하기
           </Button>
         </View>
 
