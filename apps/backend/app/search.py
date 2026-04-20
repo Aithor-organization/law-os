@@ -42,6 +42,11 @@ _CODE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "capital_market": ("자본시장법", "자본시장과 금융투자업"),
     "bankruptcy": ("채무자회생법", "채무자 회생", "도산법"),
     "medical": ("의료법",),
+    # Phase 3
+    "apartment_management": ("공동주택관리법", "층간소음"),
+    "noise_control": ("소음진동관리법", "소음ㆍ진동관리법", "소음·진동관리법", "소음규제"),
+    "school_violence": ("학교폭력예방법", "학교폭력예방 및 대책", "학폭법"),
+    "juvenile": ("소년법", "촉법소년", "범죄소년"),
 }
 
 _CASE_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {

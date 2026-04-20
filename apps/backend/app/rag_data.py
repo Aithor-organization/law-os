@@ -47,6 +47,11 @@ CORE_LAWS: dict[str, str] = {
     "capital_market": "자본시장법",
     "bankruptcy": "채무자회생법",
     "medical": "의료법",
+    # Phase 3: 생활 고빈도 사안 (층간소음/학교폭력)
+    "apartment_management": "공동주택관리법",
+    "noise_control": "소음·진동관리법",
+    "school_violence": "학교폭력예방법",
+    "juvenile": "소년법",
 }
 
 # 일부 법령은 법령정보센터 API가 사용하는 공식 명칭이 CORE_LAWS의 단축 명과 다르다.
@@ -67,6 +72,8 @@ _LAW_API_TITLE_OVERRIDE: dict[str, str] = {
     "youth_protection": "청소년 보호법",
     "capital_market": "자본시장과 금융투자업에 관한 법률",
     "bankruptcy": "채무자 회생 및 파산에 관한 법률",
+    "noise_control": "소음ㆍ진동관리법",
+    "school_violence": "학교폭력예방 및 대책에 관한 법률",
 }
 
 PRECEDENT_SEED_QUERIES: dict[str, list[str]] = {
@@ -168,6 +175,22 @@ PRECEDENT_SEED_QUERIES: dict[str, list[str]] = {
     "medical": [
         "의료행위", "의료과실", "설명의무", "진료기록", "처방전",
         "의료광고", "의료기관",
+    ],
+    "apartment_management": [
+        "층간소음", "공동주택", "입주자대표회의", "관리사무소",
+        "관리비", "하자보수", "주택관리업자",
+    ],
+    "noise_control": [
+        "생활소음", "소음규제", "소음진동", "환경소음", "공사장 소음",
+        "확성기 소음",
+    ],
+    "school_violence": [
+        "학교폭력", "가해학생 조치", "피해학생 보호", "학교폭력대책심의위원회",
+        "학폭위", "사이버 학교폭력",
+    ],
+    "juvenile": [
+        "소년범", "촉법소년", "범죄소년", "보호처분", "소년부송치",
+        "소년원", "보호관찰",
     ],
 }
 
