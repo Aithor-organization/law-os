@@ -7,6 +7,7 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { PressableCard } from "@/components/ui/Card";
+import { Icon, ICON_COLOR } from "@/components/ui/Icon";
 
 type Filter = "all" | "normal" | "debate" | "archived";
 
@@ -87,7 +88,7 @@ export default function ChatListScreen() {
             }}
             accessibilityLabel="새 대화"
           >
-            <Text className="font-mono text-xl text-white">+</Text>
+            <Icon name="plus" size={22} color="#FFFFFF" />
           </Pressable>
         }
       />
@@ -131,9 +132,11 @@ export default function ChatListScreen() {
           >
             <View className="flex-row items-center">
               <View className="mr-3 h-10 w-10 items-center justify-center rounded bg-violet/20">
-                <Text className="text-base">
-                  {conv.mode === "debate" ? "⚖️" : "💬"}
-                </Text>
+                <Icon
+                  name={conv.mode === "debate" ? "chat-mode-debate" : "chat-mode-normal"}
+                  size={20}
+                  color={ICON_COLOR.violetGlow}
+                />
               </View>
               <View className="flex-1 mr-3">
                 <Text

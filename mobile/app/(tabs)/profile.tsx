@@ -9,6 +9,7 @@ import { listNotes } from "@/lib/notes";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
+import { Icon, ICON_COLOR } from "@/components/ui/Icon";
 
 const QUICK_LINKS: { label: string; href: string }[] = [
   { label: "프로필 편집", href: "/profile/edit" },
@@ -222,7 +223,7 @@ export default function ProfileScreen() {
           </View>
           <View className="w-[48%]">
             <Card>
-              <Text className="font-mono text-2xl text-violet-glow">🎁</Text>
+              <Icon name="gift" size={24} color={ICON_COLOR.violetGlow} />
               <Text
                 className="mt-1 font-mono text-[10px] uppercase text-dim"
                 numberOfLines={1}

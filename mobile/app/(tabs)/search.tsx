@@ -15,12 +15,19 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
+import { Icon, ICON_COLOR } from "@/components/ui/Icon";
 
-const CATEGORIES: Array<{ code: SearchCode; name: string; count: string; icon: string }> = [
-  { code: "civil", name: "민법", count: "1,118조", icon: "⚖️" },
-  { code: "criminal", name: "형법", count: "372조", icon: "🔨" },
-  { code: "constitutional", name: "헌법", count: "130조", icon: "📜" },
-  { code: "commercial", name: "상법", count: "935조", icon: "💼" },
+type CategoryIcon =
+  | "statute-civil"
+  | "statute-criminal"
+  | "statute-constitutional"
+  | "statute-commercial";
+
+const CATEGORIES: Array<{ code: SearchCode; name: string; count: string; iconName: CategoryIcon }> = [
+  { code: "civil", name: "민법", count: "1,118조", iconName: "statute-civil" },
+  { code: "criminal", name: "형법", count: "372조", iconName: "statute-criminal" },
+  { code: "constitutional", name: "헌법", count: "130조", iconName: "statute-constitutional" },
+  { code: "commercial", name: "상법", count: "935조", iconName: "statute-commercial" },
 ];
 
 type SearchTab = "statute" | "case" | "all";
@@ -361,7 +368,11 @@ export default function SearchScreen() {
                   className="w-[48%]"
                 >
                   <Card selected={selected}>
-                    <Text className="text-2xl">{item.icon}</Text>
+                    <Icon
+                      name={item.iconName}
+                      size={22}
+                      color={selected ? ICON_COLOR.violetGlow : ICON_COLOR.fg}
+                    />
                     <Text
                       className="mt-2 font-kr text-base font-semibold text-fg"
                       numberOfLines={1}
