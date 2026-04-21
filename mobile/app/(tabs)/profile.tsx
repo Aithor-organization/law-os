@@ -10,14 +10,43 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
 import { Icon, ICON_COLOR } from "@/components/ui/Icon";
+import { StreakCard } from "@/components/ui/StreakCard";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
-const QUICK_LINKS: { label: string; href: string }[] = [
-  { label: "프로필 편집", href: "/profile/edit" },
-  { label: "내 법령", href: "/profile/laws" },
-  { label: "학습 통계", href: "/profile/stats" },
-  { label: "알림 설정", href: "/profile/notifications" },
-  { label: "법적 정보", href: "/profile/legal" },
-  { label: "로그아웃", href: "/modals/logout" },
+interface MenuLink {
+  label: string;
+  href: string;
+}
+
+interface MenuSection {
+  title: string;
+  defaultExpanded: boolean;
+  links: MenuLink[];
+}
+
+const MENU_SECTIONS: MenuSection[] = [
+  {
+    title: "학습 설정",
+    defaultExpanded: true,
+    links: [
+      { label: "내 법령", href: "/profile/laws" },
+      { label: "학습 통계", href: "/profile/stats" },
+      { label: "알림 설정", href: "/profile/notifications" },
+    ],
+  },
+  {
+    title: "내 계정",
+    defaultExpanded: false,
+    links: [
+      { label: "프로필 편집", href: "/profile/edit" },
+      { label: "로그아웃", href: "/modals/logout" },
+    ],
+  },
+  {
+    title: "기타",
+    defaultExpanded: false,
+    links: [{ label: "법적 정보", href: "/profile/legal" }],
+  },
 ];
 
 function firstLetter(source: string | null | undefined): string {
@@ -51,6 +80,8 @@ export default function ProfileScreen() {
     bookmarks: 0,
     notes: 0,
     starred: 0,
+    streakDays: 0,
+    bestStreak: 0,
   });
 
   const load = useCallback(async () => {
@@ -72,10 +103,14 @@ export default function ProfileScreen() {
 
     // Fetch real counts via HEAD-style queries — for MVP we use full fetch with
     // limit: 1 plus separate count queries could be added once row volume grows.
+    // Streak fields are placeholder 0s — backend integration comes later.
+    // Structure is ready so the UI renders correctly once real values arrive.
     setStats({
       bookmarks: bookmarksRes.data.length,
       notes: notesRes.data.length,
       starred: starredRes.data.length,
+      streakDays: 0,
+      bestStreak: 0,
     });
 
     setLoading(false);
@@ -172,6 +207,12 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {!loading && (
+          <View className="mx-6 mt-4">
+            <StreakCard streakDays={stats.streakDays} bestStreak={stats.bestStreak} />
+          </View>
+        )}
+
         <View className="mx-6 mt-4 flex-row flex-wrap gap-3">
           <View className="w-[48%]">
             <Card>
@@ -234,37 +275,42 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View className="mt-6 px-6 pb-8">
-          <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
-            // menu
-          </Text>
-          <View className="mt-3 overflow-hidden rounded border border-white/10 bg-surface">
-            {QUICK_LINKS.map((link, i) => (
-              <Pressable
-                key={link.href}
-                onPress={() => router.push(link.href as any)}
-                accessibilityRole="link"
-                accessibilityLabel={link.label}
-                className={`h-14 flex-row items-center justify-between px-4 ${
-                  i > 0 ? "border-t border-white/5" : ""
-                }`}
-                style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+        <View className="mt-6 mx-6 pb-8 gap-3">
+          {MENU_SECTIONS.map((section) => (
+            <View
+              key={section.title}
+              className="overflow-hidden rounded border border-white/10 bg-surface"
+            >
+              <CollapsibleSection
+                title={section.title}
+                defaultExpanded={section.defaultExpanded}
+                meta={`${section.links.length}개`}
               >
-                <Text
-                  className="flex-1 mr-3 font-kr text-base text-fg"
-                  numberOfLines={1}
-                >
-                  {link.label}
-                </Text>
-                <Text
-                  className="font-mono text-xs text-dim"
-                  numberOfLines={1}
-                >
-                  →
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+                <View className="border-t border-white/5">
+                  {section.links.map((link, i) => (
+                    <Pressable
+                      key={link.href}
+                      onPress={() => router.push(link.href as any)}
+                      accessibilityRole="link"
+                      accessibilityLabel={link.label}
+                      className={`h-14 flex-row items-center justify-between px-4 ${
+                        i > 0 ? "border-t border-white/5" : ""
+                      }`}
+                      style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+                    >
+                      <Text
+                        className="flex-1 mr-3 font-kr text-base text-fg"
+                        numberOfLines={1}
+                      >
+                        {link.label}
+                      </Text>
+                      <Icon name="arrow-right" size={14} color={ICON_COLOR.dim} />
+                    </Pressable>
+                  ))}
+                </View>
+              </CollapsibleSection>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
