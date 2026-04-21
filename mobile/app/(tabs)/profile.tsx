@@ -6,6 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { getProfile, type Profile } from "@/lib/auth";
 import { listBookmarks } from "@/lib/bookmarks";
 import { listNotes } from "@/lib/notes";
+import { getStreak } from "@/lib/stats";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
@@ -88,11 +89,12 @@ export default function ProfileScreen() {
     setLoading(true);
     setError(null);
 
-    const [profileRes, bookmarksRes, notesRes, starredRes] = await Promise.all([
+    const [profileRes, bookmarksRes, notesRes, starredRes, streak] = await Promise.all([
       getProfile(),
       listBookmarks(),
       listNotes({ limit: 1 }),
       listNotes({ starred: true, limit: 1 }),
+      getStreak(),
     ]);
 
     if (profileRes.error) {
@@ -103,14 +105,12 @@ export default function ProfileScreen() {
 
     // Fetch real counts via HEAD-style queries — for MVP we use full fetch with
     // limit: 1 plus separate count queries could be added once row volume grows.
-    // Streak fields are placeholder 0s — backend integration comes later.
-    // Structure is ready so the UI renders correctly once real values arrive.
     setStats({
       bookmarks: bookmarksRes.data.length,
       notes: notesRes.data.length,
       starred: starredRes.data.length,
-      streakDays: 0,
-      bestStreak: 0,
+      streakDays: streak.current,
+      bestStreak: streak.best,
     });
 
     setLoading(false);

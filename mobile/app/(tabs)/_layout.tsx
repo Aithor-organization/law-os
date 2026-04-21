@@ -1,6 +1,8 @@
+import { useCallback, useEffect, useState } from "react";
 import { Tabs } from "expo-router";
 import { Text, View } from "react-native";
 import { Icon, ICON_COLOR } from "@/components/ui/Icon";
+import { listConversations } from "@/lib/conversations";
 
 type TabIconKey = "chat" | "search" | "library" | "profile";
 
@@ -50,6 +52,26 @@ function TabIcon({
 }
 
 export default function TabsLayout() {
+  // Chat tab badge — count of active (non-archived) conversations.
+  // Fetched once on mount; future iteration can wire a refetch trigger
+  // (e.g., from chat-creation screens via a shared store) so the number
+  // stays live. For the current scope, an initial snapshot is enough.
+  const [chatBadge, setChatBadge] = useState<number | undefined>(undefined);
+
+  const refetchChatBadge = useCallback(async () => {
+    const { data, error } = await listConversations();
+    if (error) {
+      setChatBadge(undefined);
+      return;
+    }
+    const active = data.filter((c) => c.archived_at === null).length;
+    setChatBadge(active > 0 ? active : undefined);
+  }, []);
+
+  useEffect(() => {
+    void refetchChatBadge();
+  }, [refetchChatBadge]);
+
   return (
     <Tabs
       screenOptions={{
@@ -70,7 +92,9 @@ export default function TabsLayout() {
         options={{
           title: "대화",
           tabBarAccessibilityLabel: "대화",
-          tabBarIcon: ({ focused }) => <TabIcon name="chat" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="chat" focused={focused} badge={chatBadge} />
+          ),
         }}
       />
       <Tabs.Screen
