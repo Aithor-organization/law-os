@@ -16,6 +16,7 @@ import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
 import { Icon, ICON_COLOR } from "@/components/ui/Icon";
+import { SourceBadge } from "@/components/ui/SourceBadge";
 
 type CategoryIcon =
   | "statute-civil"
@@ -241,14 +242,19 @@ export default function SearchScreen() {
                 >
                   <View className="flex-row items-start">
                     <View className="flex-1 mr-3">
-                      <Text
-                        className="font-mono text-[10px] uppercase text-violet-glow"
-                        numberOfLines={1}
-                      >
-                        {item.type === "statute"
-                          ? `${item.codeKr ?? "조문"} · ${item.articleNo ?? "-"}`
-                          : `${COURT_LABEL[item.court ?? ""] ?? item.court ?? "판례"} · ${item.caseNo ?? item.id}`}
-                      </Text>
+                      <SourceBadge
+                        kind={item.type === "statute" ? "statute" : "case"}
+                        label={
+                          item.type === "statute"
+                            ? item.codeKr ?? "조문"
+                            : COURT_LABEL[item.court ?? ""] ?? item.court ?? "판례"
+                        }
+                        meta={
+                          item.type === "statute"
+                            ? item.articleNo ?? undefined
+                            : item.caseNo ?? undefined
+                        }
+                      />
                       <Text
                         className="mt-2 font-kr text-base font-semibold text-fg"
                         numberOfLines={1}
