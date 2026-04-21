@@ -6,7 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { listBookmarks, type Bookmark } from "@/lib/bookmarks";
 import { supabase } from "@/lib/supabase";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
-import { LoadingState, EmptyState } from "@/components/ui/FeedbackState";
+import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
 
 type BookmarkItem = {
@@ -205,7 +205,11 @@ export default function LibraryScreen() {
           </Text>
           <View className="mt-3 gap-3">
             {loading ? (
-              <LoadingState message="불러오는 중..." />
+              <View className="gap-3">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </View>
             ) : bookmarks.length > 0 ? (
               bookmarks.map((item) => {
                 const color = SUBJECT_COLOR[item.sourceId.split("-")[0]] ?? "#A855F7";

@@ -5,7 +5,7 @@ import { router, useFocusEffect } from "expo-router";
 import { listConversations, type Conversation } from "@/lib/conversations";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
-import { LoadingState, EmptyState } from "@/components/ui/FeedbackState";
+import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { PressableCard } from "@/components/ui/Card";
 
 type Filter = "all" | "normal" | "debate" | "archived";
@@ -108,7 +108,13 @@ export default function ChatListScreen() {
           </View>
         )}
 
-        {loading && !error && <LoadingState message="대화 목록 불러오는 중..." />}
+        {loading && !error && (
+          <View className="gap-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        )}
 
         {!loading && filtered.length === 0 && !error && (
           <EmptyState

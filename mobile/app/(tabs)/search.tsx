@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
-import { LoadingState, EmptyState } from "@/components/ui/FeedbackState";
+import { EmptyState, SkeletonCard } from "@/components/ui/FeedbackState";
 import { Card, PressableCard } from "@/components/ui/Card";
 
 const CATEGORIES: Array<{ code: SearchCode; name: string; count: string; icon: string }> = [
@@ -182,6 +182,7 @@ export default function SearchScreen() {
             <Pressable
               onPress={() => void runSearch()}
               className="h-9 items-center justify-center rounded bg-violet px-4"
+              style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
               hitSlop={8}
               accessibilityLabel="검색 실행"
             >
@@ -220,7 +221,11 @@ export default function SearchScreen() {
           </Text>
           <View className="mt-3 gap-3">
             {loading ? (
-              <LoadingState message="검색 중..." />
+              <View className="gap-3">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </View>
             ) : results.length > 0 ? (
               results.map((item) => (
                 <PressableCard
