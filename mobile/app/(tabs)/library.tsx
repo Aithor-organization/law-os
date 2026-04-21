@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { listBookmarks, type Bookmark } from "@/lib/bookmarks";
 import { supabase } from "@/lib/supabase";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { LoadingState, EmptyState } from "@/components/ui/FeedbackState";
+import { Card, PressableCard } from "@/components/ui/Card";
 
 type BookmarkItem = {
   id: string;
@@ -141,28 +138,59 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
-      <ScrollView className="flex-1">
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <Text className="font-kr text-2xl font-bold text-fg">서재</Text>
-        </View>
+      <ScreenHeader
+        title="서재"
+        subtitle="저장한 조문·판례를 한눈에"
+      />
 
-        <View className="mx-6 flex-row items-center justify-between rounded border border-white/10 bg-surface p-4">
-          <View>
-            <Text className="font-mono text-2xl text-cyan">
-              {counts.statute + counts.case}
-            </Text>
-            <Text className="font-mono text-[10px] uppercase text-dim">
-              // total bookmarks
-            </Text>
-          </View>
-          <View>
-            <Text className="font-mono text-2xl text-cyan">{counts.statute}</Text>
-            <Text className="font-mono text-[10px] uppercase text-dim">// 조문</Text>
-          </View>
-          <View>
-            <Text className="font-mono text-2xl text-violet-glow">{counts.case}</Text>
-            <Text className="font-mono text-[10px] uppercase text-dim">// 판례</Text>
-          </View>
+      <ScrollView className="flex-1">
+        <View className="mx-6 mt-4">
+          <Card>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text
+                  className="font-mono text-2xl text-cyan"
+                  numberOfLines={1}
+                >
+                  {counts.statute + counts.case}
+                </Text>
+                <Text
+                  className="font-mono text-[10px] uppercase text-dim"
+                  numberOfLines={1}
+                >
+                  // total
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="font-mono text-2xl text-cyan"
+                  numberOfLines={1}
+                >
+                  {counts.statute}
+                </Text>
+                <Text
+                  className="font-mono text-[10px] uppercase text-dim"
+                  numberOfLines={1}
+                >
+                  // 조문
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="font-mono text-2xl text-violet-glow"
+                  numberOfLines={1}
+                >
+                  {counts.case}
+                </Text>
+                <Text
+                  className="font-mono text-[10px] uppercase text-dim"
+                  numberOfLines={1}
+                >
+                  // 판례
+                </Text>
+              </View>
+            </View>
+          </Card>
         </View>
 
         {error && (
@@ -177,15 +205,12 @@ export default function LibraryScreen() {
           </Text>
           <View className="mt-3 gap-3">
             {loading ? (
-              <View className="flex-row items-center gap-3 rounded border border-white/10 bg-surface p-4">
-                <ActivityIndicator size="small" color="#A855F7" />
-                <Text className="font-kr text-sm text-dim">불러오는 중...</Text>
-              </View>
+              <LoadingState message="불러오는 중..." />
             ) : bookmarks.length > 0 ? (
               bookmarks.map((item) => {
                 const color = SUBJECT_COLOR[item.sourceId.split("-")[0]] ?? "#A855F7";
                 return (
-                  <Pressable
+                  <PressableCard
                     key={item.id}
                     onPress={() =>
                       router.push(
@@ -194,35 +219,41 @@ export default function LibraryScreen() {
                           : (`/case/${item.sourceId}` as any),
                       )
                     }
-                    accessibilityRole="button"
-                    className="rounded border border-white/10 bg-surface p-4"
                   >
                     <View className="flex-row items-center gap-2">
                       <View
                         className="h-1 w-4 rounded-full"
                         style={{ backgroundColor: color }}
                       />
-                      <Text className="font-mono text-[10px] uppercase text-violet-glow">
+                      <Text
+                        className="font-mono text-[10px] uppercase text-violet-glow"
+                        numberOfLines={1}
+                      >
                         {item.sourceType === "statute" ? "조문" : "판례"}
                       </Text>
                     </View>
-                    <Text className="mt-2 font-kr text-base font-semibold text-fg">
+                    <Text
+                      className="mt-2 font-kr text-base font-semibold text-fg"
+                      numberOfLines={1}
+                    >
                       {item.label}
                     </Text>
                     {item.subtitle && (
-                      <Text className="mt-1 font-kr text-xs text-dim" numberOfLines={1}>
+                      <Text
+                        className="mt-1 font-kr text-xs text-dim"
+                        numberOfLines={1}
+                      >
                         {item.subtitle}
                       </Text>
                     )}
-                  </Pressable>
+                  </PressableCard>
                 );
               })
             ) : (
-              <View className="rounded border border-white/10 bg-surface p-4">
-                <Text className="font-kr text-sm text-dim">
-                  아직 저장한 조문·판례가 없습니다. 조문/판례 상세에서 ⭐ 버튼을 눌러 저장하세요.
-                </Text>
-              </View>
+              <EmptyState
+                title="저장한 항목이 없습니다"
+                hint="조문·판례 상세 화면에서 ⭐ 버튼을 눌러 저장하세요"
+              />
             )}
           </View>
         </View>
