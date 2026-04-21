@@ -213,65 +213,64 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <View className="mx-6 mt-4 flex-row flex-wrap gap-3">
-          <View className="w-[48%]">
-            <Card>
-              <Text
-                className="font-mono text-2xl text-cyan"
-                numberOfLines={1}
-              >
-                {stats.bookmarks}
-              </Text>
-              <Text
-                className="mt-1 font-mono text-[10px] uppercase text-dim"
-                numberOfLines={1}
-              >
-                // 북마크
-              </Text>
-            </Card>
-          </View>
-          <View className="w-[48%]">
-            <Card>
-              <Text
-                className="font-mono text-2xl text-cyan"
-                numberOfLines={1}
-              >
-                {stats.notes}
-              </Text>
-              <Text
-                className="mt-1 font-mono text-[10px] uppercase text-dim"
-                numberOfLines={1}
-              >
-                // 저장한 노트
-              </Text>
-            </Card>
-          </View>
-          <View className="w-[48%]">
-            <Card>
-              <Text
-                className="font-mono text-2xl text-violet-glow"
-                numberOfLines={1}
-              >
-                {stats.starred}
-              </Text>
-              <Text
-                className="mt-1 font-mono text-[10px] uppercase text-dim"
-                numberOfLines={1}
-              >
-                // 즐겨찾기
-              </Text>
-            </Card>
-          </View>
-          <View className="w-[48%]">
-            <Card>
-              <Icon name="gift" size={24} color={ICON_COLOR.violetGlow} />
-              <Text
-                className="mt-1 font-mono text-[10px] uppercase text-dim"
-                numberOfLines={1}
-              >
-                // 무료 체험 중
-              </Text>
-            </Card>
+        {/* Stats hierarchy: primary metric (북마크) gets full-width big
+            card with text-3xl; secondary metrics (노트/즐겨찾기) share a
+            row with text-xl. "무료 체험" was redundant with the FREE tier
+            chip in the profile header, so it's removed. */}
+        <View className="mx-6 mt-4 gap-3">
+          <Card>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text
+                  className="font-mono text-3xl font-bold text-cyan"
+                  numberOfLines={1}
+                >
+                  {stats.bookmarks}
+                </Text>
+                <Text
+                  className="mt-1 font-mono text-[10px] uppercase tracking-wider text-dim"
+                  numberOfLines={1}
+                >
+                  // 북마크 · 저장한 조문·판례
+                </Text>
+              </View>
+              <Icon name="bookmark" size={28} color={ICON_COLOR.cyan} />
+            </View>
+          </Card>
+
+          <View className="flex-row gap-3">
+            <View className="w-[48%]">
+              <Card>
+                <Text
+                  className="font-mono text-xl font-semibold text-fg"
+                  numberOfLines={1}
+                >
+                  {stats.notes}
+                </Text>
+                <Text
+                  className="mt-1 font-mono text-[10px] uppercase text-dim"
+                  numberOfLines={1}
+                >
+                  // 노트
+                </Text>
+              </Card>
+            </View>
+            <View className="w-[48%]">
+              <Card>
+                <Text
+                  className="font-mono text-xl font-semibold text-fg"
+                  numberOfLines={1}
+                >
+                  {stats.starred}
+                </Text>
+                <Text
+                  className="mt-1 font-mono text-[10px] uppercase text-dim"
+                  numberOfLines={1}
+                >
+                  // 즐겨찾기
+                </Text>
+              </Card>
+            </View>
           </View>
         </View>
 
