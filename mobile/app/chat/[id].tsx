@@ -305,15 +305,58 @@ export default function ActiveChatScreen() {
     );
   }, [streaming, seed]);
 
+  // Perplexity-style follow-up suggestions — shown after the last
+  // assistant message when not streaming. Static set for MVP; future
+  // iteration can derive them from the assistant response content.
+  const FOLLOWUP_QUESTIONS = [
+    "더 자세히 설명해주세요",
+    "관련 판례가 있나요?",
+    "실무에서는 어떻게 적용되나요?",
+    "쉬운 예시로 알려주세요",
+  ];
+
+  const lastMessage = messages[messages.length - 1];
+  const showFollowUps =
+    !streaming && lastMessage?.role === "assistant" && messages.length > 0;
+
   const listFooter = useMemo(
     () => (
-      <View className="mt-2 items-center">
-        <Text className="font-mono text-[10px] text-dim">
-          // 학습 참고용 · 실제 분쟁은 변호사 상담 필요
-        </Text>
+      <View className="mt-2 gap-6">
+        {showFollowUps ? (
+          <View>
+            <Text className="mb-3 font-mono text-[10px] uppercase tracking-wider text-cyan">
+              // 이어서 질문하기
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {FOLLOWUP_QUESTIONS.map((q) => (
+                <Pressable
+                  key={q}
+                  onPress={() => handleSend(q)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`팔로우업: ${q}`}
+                  style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+                  className="h-9 items-center justify-center rounded-full border border-violet/30 bg-violet/10 px-3"
+                >
+                  <Text
+                    className="font-kr text-xs text-violet-glow"
+                    numberOfLines={1}
+                  >
+                    {q}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
+        <View className="items-center">
+          <Text className="font-mono text-[10px] text-dim">
+            // 학습 참고용 · 실제 분쟁은 변호사 상담 필요
+          </Text>
+        </View>
       </View>
     ),
-    [],
+    [showFollowUps, handleSend],
   );
 
   const listHeader = useMemo(() => {
