@@ -22,6 +22,17 @@ interface PressableCardProps extends CardBaseProps {
 // Do NOT pass overrides for base utilities (bg-*, border-*, p-*, rounded)
 // — NativeWind 4 lacks built-in twMerge and the merge result is undefined.
 // If an override is genuinely needed, add a new prop/variant here instead.
+//
+// CALLER REQUIREMENTS for uniform appearance across instances:
+// 1. All cards of the same *role* (e.g., all bookmark rows) must receive
+//    children of identical shape — mixing 1-line and 3-line bodies
+//    breaks the "same-size" invariant the component cannot itself enforce.
+// 2. All inner <Text> must set numberOfLines={1} when the content is
+//    expected to be single-line (titles, subtitles, tags). Multi-line
+//    description blocks should use numberOfLines={2} or {3} and never
+//    be unbounded — otherwise cards grow unpredictably.
+// 3. When used inside a grid (w-[48%]), pass the SAME className at every
+//    call site — mixing w-[48%] and w-full within one list breaks layout.
 
 function cardClasses(selected: boolean, extra: string) {
   const base = "rounded p-4 bg-surface";

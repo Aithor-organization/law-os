@@ -27,19 +27,33 @@ interface EmptyStateProps {
 }
 
 // Unified empty state. Use when a list or section has no content.
-// title is the primary message (e.g., "저장한 항목이 없습니다"),
-// hint is optional secondary guidance (e.g., how to add one).
+//
+// Invariants:
+// - title single-line (numberOfLines=1, truncate on overflow)
+// - hint limited to 2 lines (numberOfLines=2) — keep messaging short
+// - No fixed height: caller decides outer container sizing. If multiple
+//   EmptyStates appear side-by-side they should share the same wrapper
+//   (e.g., same grid cell size) — the component itself cannot enforce
+//   uniformity across callers.
 export function EmptyState({ title, hint, action }: EmptyStateProps) {
   return (
     <View className="rounded border border-white/10 bg-surface p-6">
       <Text className="font-mono text-[10px] uppercase tracking-wider text-dim">
         // empty
       </Text>
-      <Text className="mt-3 font-kr text-base font-semibold text-fg">
+      <Text
+        className="mt-3 font-kr text-base font-semibold text-fg"
+        numberOfLines={1}
+      >
         {title}
       </Text>
       {hint ? (
-        <Text className="mt-2 font-kr text-sm text-dim">{hint}</Text>
+        <Text
+          className="mt-2 font-kr text-sm text-dim"
+          numberOfLines={2}
+        >
+          {hint}
+        </Text>
       ) : null}
       {action ? <View className="mt-4">{action}</View> : null}
     </View>
