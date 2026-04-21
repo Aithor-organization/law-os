@@ -42,7 +42,7 @@ const MAP: Record<IconKey, IoniconName> = {
   "statute-constitutional": "document-text-outline",
   "statute-commercial": "briefcase-outline",
   "chat-mode-normal": "chatbubble-ellipses-outline",
-  "chat-mode-debate": "git-branch-outline",
+  "chat-mode-debate": "chatbubbles-outline",
   bookmark: "bookmark-outline",
   note: "create-outline",
   star: "star-outline",

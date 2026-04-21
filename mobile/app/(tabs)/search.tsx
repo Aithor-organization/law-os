@@ -235,53 +235,94 @@ export default function SearchScreen() {
                 <SkeletonCard />
               </View>
             ) : results.length > 0 ? (
-              results.map((item) => (
-                <PressableCard
-                  key={`${item.type}-${item.id}`}
-                  onPress={() => openResult(item)}
-                >
-                  <View className="flex-row items-start">
-                    <View className="flex-1 mr-3">
-                      <SourceBadge
-                        kind={item.type === "statute" ? "statute" : "case"}
-                        label={
-                          item.type === "statute"
-                            ? item.codeKr ?? "조문"
-                            : COURT_LABEL[item.court ?? ""] ?? item.court ?? "판례"
-                        }
-                        meta={
-                          item.type === "statute"
-                            ? item.articleNo ?? undefined
-                            : item.caseNo ?? undefined
-                        }
-                      />
-                      <Text
-                        className="mt-2 font-kr text-base font-semibold text-fg"
-                        numberOfLines={1}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text
-                        className="mt-2 font-kr text-sm leading-6 text-dim"
-                        numberOfLines={2}
-                      >
-                        {item.textPreview}
-                      </Text>
-                      <View className="mt-3 flex-row items-center gap-3">
-                        <Text className="font-mono text-[10px] text-cyan" numberOfLines={1}>
-                          // score {item.score.toFixed(3)}
+              (() => {
+                const renderCard = (item: SearchItem) => (
+                  <PressableCard
+                    key={`${item.type}-${item.id}`}
+                    onPress={() => openResult(item)}
+                  >
+                    <View className="flex-row items-start">
+                      <View className="flex-1 mr-3">
+                        <SourceBadge
+                          kind={item.type === "statute" ? "statute" : "case"}
+                          label={
+                            item.type === "statute"
+                              ? item.codeKr ?? "조문"
+                              : COURT_LABEL[item.court ?? ""] ?? item.court ?? "판례"
+                          }
+                          meta={
+                            item.type === "statute"
+                              ? item.articleNo ?? undefined
+                              : item.caseNo ?? undefined
+                          }
+                        />
+                        <Text
+                          className="mt-2 font-kr text-base font-semibold text-fg"
+                          numberOfLines={1}
+                        >
+                          {item.title}
                         </Text>
-                        {item.type === "case" && item.decidedAt && (
-                          <Text className="font-mono text-[10px] text-dim" numberOfLines={1}>
-                            {CATEGORY_LABEL[item.category ?? ""] ?? item.category} · {item.decidedAt}
+                        <Text
+                          className="mt-2 font-kr text-sm leading-6 text-dim"
+                          numberOfLines={2}
+                        >
+                          {item.textPreview}
+                        </Text>
+                        <View className="mt-3 flex-row items-center gap-3">
+                          <Text className="font-mono text-[10px] text-cyan" numberOfLines={1}>
+                            // score {item.score.toFixed(3)}
                           </Text>
-                        )}
+                          {item.type === "case" && item.decidedAt && (
+                            <Text className="font-mono text-[10px] text-dim" numberOfLines={1}>
+                              {CATEGORY_LABEL[item.category ?? ""] ?? item.category} · {item.decidedAt}
+                            </Text>
+                          )}
+                        </View>
                       </View>
+                      <Text className="font-mono text-xs text-dim">→</Text>
                     </View>
-                    <Text className="font-mono text-xs text-dim">→</Text>
-                  </View>
-                </PressableCard>
-              ))
+                  </PressableCard>
+                );
+
+                // On "전체" tab, group by type so statutes and cases are
+                // visually separated with sticky-style section headers.
+                // On "조문" / "판례" tabs, render flat (single type).
+                if (tab === "all") {
+                  const statutes = results.filter((r) => r.type === "statute");
+                  const cases = results.filter((r) => r.type === "case");
+                  return (
+                    <>
+                      {statutes.length > 0 && (
+                        <View className="gap-3">
+                          <View className="flex-row items-center gap-2 border-b border-white/5 pb-2">
+                            <Text
+                              className="font-mono text-[10px] uppercase tracking-wider text-violet-glow"
+                              numberOfLines={1}
+                            >
+                              // 조문 ({statutes.length})
+                            </Text>
+                          </View>
+                          {statutes.map(renderCard)}
+                        </View>
+                      )}
+                      {cases.length > 0 && (
+                        <View className="gap-3 mt-3">
+                          <View className="flex-row items-center gap-2 border-b border-white/5 pb-2">
+                            <Text
+                              className="font-mono text-[10px] uppercase tracking-wider text-violet-glow"
+                              numberOfLines={1}
+                            >
+                              // 판례 ({cases.length})
+                            </Text>
+                          </View>
+                          {cases.map(renderCard)}
+                        </View>
+                      )}
+                    </>
+                  );
+                }
+                return <>{results.map(renderCard)}</>;
+              })()
             ) : query.trim().length > 0 ? (
               <EmptyState
                 title="검색 결과가 없습니다"
