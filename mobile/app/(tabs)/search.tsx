@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
@@ -17,6 +10,11 @@ import {
   type SearchCode,
   type SearchItem,
 } from "@/lib/search";
+import { Input } from "@/components/ui/Input";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { LoadingState, EmptyState } from "@/components/ui/FeedbackState";
+import { Card, PressableCard } from "@/components/ui/Card";
 
 const CATEGORIES: Array<{ code: SearchCode; name: string; count: string; icon: string }> = [
   { code: "civil", name: "민법", count: "1,118조", icon: "⚖️" },
@@ -26,6 +24,12 @@ const CATEGORIES: Array<{ code: SearchCode; name: string; count: string; icon: s
 ];
 
 type SearchTab = "statute" | "case" | "all";
+
+const SEARCH_TABS: readonly { key: SearchTab; label: string }[] = [
+  { key: "statute", label: "조문" },
+  { key: "case", label: "판례" },
+  { key: "all", label: "전체" },
+];
 
 const COURT_LABEL: Record<string, string> = {
   supreme: "대법원",
@@ -142,35 +146,48 @@ export default function SearchScreen() {
     router.push(`/case/${item.id}` as any);
   };
 
+  const onTabChange = (next: SearchTab) => {
+    setTab(next);
+    if (next !== "statute") {
+      setSelectedCode(null);
+    }
+    if (query.trim()) {
+      void runSearch(query, next === "statute" ? selectedCode : null, next);
+    } else {
+      setError(null);
+      setResults([]);
+      setResultTotal(null);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
+      <ScreenHeader
+        title="검색"
+        subtitle="조문·판례를 하이브리드 검색합니다"
+      />
+
+      <SegmentedTabs tabs={SEARCH_TABS} value={tab} onChange={onTabChange} />
+
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
         <View className="px-6 pt-4">
-          <Text className="font-kr text-3xl font-bold text-fg">검색</Text>
-          <Text className="mt-2 font-kr text-sm text-dim">
-            조문·판례 검색과 기본 하이브리드 결과를 연결했습니다.
-          </Text>
-        </View>
-
-        <View className="mt-6 px-6">
-          <View className="rounded border border-white/10 bg-surface px-4 py-3">
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={() => void runSearch()}
-              returnKeyType="search"
-              placeholder="조문·판례·키워드..."
-              placeholderTextColor="#71717A"
-              className="font-kr text-base text-fg"
-              style={{ outlineStyle: "none" } as any}
-            />
-          </View>
+          <Input
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => void runSearch()}
+            returnKeyType="search"
+            placeholder="조문·판례·키워드"
+          />
           <View className="mt-3 flex-row items-center gap-3">
             <Pressable
               onPress={() => void runSearch()}
-              className="rounded bg-violet px-4 py-2"
+              className="h-9 items-center justify-center rounded bg-violet px-4"
+              hitSlop={8}
+              accessibilityLabel="검색 실행"
             >
-              <Text className="font-mono text-[10px] uppercase text-white">search</Text>
+              <Text className="font-mono text-[10px] uppercase text-white" numberOfLines={1}>
+                search
+              </Text>
             </Pressable>
             {selectedCode && tab === "statute" && (
               <Pressable
@@ -178,48 +195,15 @@ export default function SearchScreen() {
                   setSelectedCode(null);
                   void runSearch(query, null, "statute");
                 }}
-                className="rounded border border-violet/30 bg-violet/10 px-3 py-2"
+                className="h-9 items-center justify-center rounded border border-violet/30 bg-violet/10 px-3"
+                hitSlop={8}
               >
-                <Text className="font-mono text-[10px] uppercase text-violet-glow">
+                <Text className="font-mono text-[10px] uppercase text-violet-glow" numberOfLines={1}>
                   filter · {selectedCode}
                 </Text>
               </Pressable>
             )}
           </View>
-        </View>
-
-        <View className="mt-4 flex-row gap-4 px-6">
-          {[
-            { key: "statute", label: "조문" },
-            { key: "case", label: "판례" },
-            { key: "all", label: "전체" },
-          ].map((item) => (
-            <Pressable
-              key={item.key}
-              onPress={() => {
-                const nextTab = item.key as SearchTab;
-                setTab(nextTab);
-                if (nextTab !== "statute") {
-                  setSelectedCode(null);
-                }
-                if (query.trim()) {
-                  void runSearch(query, nextTab === "statute" ? selectedCode : null, nextTab);
-                } else {
-                  setError(null);
-                  setResults([]);
-                  setResultTotal(null);
-                }
-              }}
-            >
-              <Text
-                className={`font-mono text-xs uppercase ${
-                  tab === item.key ? "text-violet-glow" : "text-dim"
-                }`}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
         </View>
 
         {!!error && (
@@ -236,36 +220,41 @@ export default function SearchScreen() {
           </Text>
           <View className="mt-3 gap-3">
             {loading ? (
-              <View className="flex-row items-center gap-3 rounded border border-white/10 bg-surface p-4">
-                <ActivityIndicator size="small" color="#A855F7" />
-                <Text className="font-kr text-sm text-fg">검색 중...</Text>
-              </View>
+              <LoadingState message="검색 중..." />
             ) : results.length > 0 ? (
               results.map((item) => (
-                <Pressable
+                <PressableCard
                   key={`${item.type}-${item.id}`}
                   onPress={() => openResult(item)}
-                  className="rounded border border-white/10 bg-surface p-4"
                 >
-                  <View className="flex-row items-start justify-between gap-3">
-                    <View className="flex-1">
-                      <Text className="font-mono text-[10px] uppercase text-violet-glow">
+                  <View className="flex-row items-start">
+                    <View className="flex-1 mr-3">
+                      <Text
+                        className="font-mono text-[10px] uppercase text-violet-glow"
+                        numberOfLines={1}
+                      >
                         {item.type === "statute"
                           ? `${item.codeKr ?? "조문"} · ${item.articleNo ?? "-"}`
                           : `${COURT_LABEL[item.court ?? ""] ?? item.court ?? "판례"} · ${item.caseNo ?? item.id}`}
                       </Text>
-                      <Text className="mt-2 font-kr text-base font-semibold text-fg">
+                      <Text
+                        className="mt-2 font-kr text-base font-semibold text-fg"
+                        numberOfLines={1}
+                      >
                         {item.title}
                       </Text>
-                      <Text className="mt-2 font-kr text-sm leading-6 text-dim">
+                      <Text
+                        className="mt-2 font-kr text-sm leading-6 text-dim"
+                        numberOfLines={2}
+                      >
                         {item.textPreview}
                       </Text>
                       <View className="mt-3 flex-row items-center gap-3">
-                        <Text className="font-mono text-[10px] text-cyan">
+                        <Text className="font-mono text-[10px] text-cyan" numberOfLines={1}>
                           // score {item.score.toFixed(3)}
                         </Text>
                         {item.type === "case" && item.decidedAt && (
-                          <Text className="font-mono text-[10px] text-dim">
+                          <Text className="font-mono text-[10px] text-dim" numberOfLines={1}>
                             {CATEGORY_LABEL[item.category ?? ""] ?? item.category} · {item.decidedAt}
                           </Text>
                         )}
@@ -273,24 +262,22 @@ export default function SearchScreen() {
                     </View>
                     <Text className="font-mono text-xs text-dim">→</Text>
                   </View>
-                </Pressable>
+                </PressableCard>
               ))
             ) : query.trim().length > 0 ? (
-              <View className="rounded border border-white/10 bg-surface p-4">
-                <Text className="font-kr text-sm text-dim">
-                  검색 결과가 없습니다. 다른 키워드나 조문/사건번호를 입력해보세요.
-                </Text>
-              </View>
+              <EmptyState
+                title="검색 결과가 없습니다"
+                hint="다른 키워드나 조문/사건번호로 다시 시도해보세요"
+              />
             ) : (
-              <View className="rounded border border-white/10 bg-surface p-4">
-                <Text className="font-kr text-sm text-dim">
-                  조문명, 키워드, 또는 “민법 750조”, “2019다236385”처럼 입력하면 결과가 나타납니다.
-                </Text>
-              </View>
+              <EmptyState
+                title="무엇을 찾으시나요?"
+                hint='조문명, 키워드, 또는 "민법 750조", "2019다236385"처럼 입력하세요'
+              />
             )}
           </View>
           {resultTotal !== null && results.length > 0 && (
-            <Text className="mt-3 font-mono text-[10px] text-dim">
+            <Text className="mt-3 font-mono text-[10px] text-dim" numberOfLines={1}>
               // total {resultTotal}
             </Text>
           )}
@@ -308,13 +295,18 @@ export default function SearchScreen() {
                 <Pressable
                   key={item}
                   onPress={() => triggerPresetSearch(item)}
-                  className="rounded border border-white/10 bg-surface-high px-3 py-2"
+                  className="h-9 items-center justify-center rounded border border-white/10 bg-surface-high px-3"
+                  hitSlop={8}
                 >
-                  <Text className="font-kr text-xs text-fg">{item}</Text>
+                  <Text className="font-kr text-xs text-fg" numberOfLines={1}>
+                    {item}
+                  </Text>
                 </Pressable>
               ))
             ) : (
-              <Text className="font-kr text-sm text-dim">아직 최근 검색 기록이 없습니다.</Text>
+              <Text className="font-kr text-sm text-dim" numberOfLines={1}>
+                아직 최근 검색 기록이 없습니다
+              </Text>
             )}
           </View>
         </View>
@@ -331,16 +323,21 @@ export default function SearchScreen() {
                 <Pressable
                   key={`${item.rank}-${item.query}`}
                   onPress={() => triggerPresetSearch(item.query)}
-                  className="flex-row items-center gap-4"
+                  className="h-9 flex-row items-center gap-4"
+                  hitSlop={8}
                 >
-                  <Text className="font-mono text-sm text-cyan">
+                  <Text className="font-mono text-sm text-cyan" numberOfLines={1}>
                     {String(item.rank).padStart(2, "0")}
                   </Text>
-                  <Text className="font-kr text-sm text-fg">{item.query}</Text>
+                  <Text className="flex-1 font-kr text-sm text-fg" numberOfLines={1}>
+                    {item.query}
+                  </Text>
                 </Pressable>
               ))
             ) : (
-              <Text className="font-kr text-sm text-dim">인기 검색어 집계가 아직 없습니다.</Text>
+              <Text className="font-kr text-sm text-dim" numberOfLines={1}>
+                인기 검색어 집계가 아직 없습니다
+              </Text>
             )}
           </View>
         </View>
@@ -356,17 +353,23 @@ export default function SearchScreen() {
                 <Pressable
                   key={item.code}
                   onPress={() => selectCategory(item.code)}
-                  className={`w-[48%] rounded border p-4 ${
-                    selected
-                      ? "border-violet/40 bg-violet/10"
-                      : "border-white/10 bg-surface"
-                  }`}
+                  className="w-[48%]"
                 >
-                  <Text className="text-2xl">{item.icon}</Text>
-                  <Text className="mt-2 font-kr text-base font-semibold text-fg">
-                    {item.name}
-                  </Text>
-                  <Text className="font-mono text-[10px] text-dim">// {item.count}</Text>
+                  <Card selected={selected}>
+                    <Text className="text-2xl">{item.icon}</Text>
+                    <Text
+                      className="mt-2 font-kr text-base font-semibold text-fg"
+                      numberOfLines={1}
+                    >
+                      {item.name}
+                    </Text>
+                    <Text
+                      className="font-mono text-[10px] text-dim"
+                      numberOfLines={1}
+                    >
+                      // {item.count}
+                    </Text>
+                  </Card>
                 </Pressable>
               );
             })}
