@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { getProfile, type Profile } from "@/lib/auth";
 import { listBookmarks } from "@/lib/bookmarks";
 import { listNotes } from "@/lib/notes";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { LoadingState } from "@/components/ui/FeedbackState";
+import { Card, PressableCard } from "@/components/ui/Card";
 
 const QUICK_LINKS: { label: string; href: string }[] = [
   { label: "프로필 편집", href: "/profile/edit" },
@@ -96,81 +99,137 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
-      <ScrollView className="flex-1">
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <Text className="font-kr text-2xl font-bold text-fg">프로필</Text>
+      <ScreenHeader
+        title="프로필"
+        subtitle="내 학습 현황과 계정 설정"
+        rightAction={
           <Pressable
             onPress={() => router.push("/profile/settings" as any)}
             accessibilityRole="link"
             accessibilityLabel="설정"
+            hitSlop={8}
           >
-            <Text className="font-mono text-xs uppercase text-dim">// settings</Text>
+            <Text className="font-mono text-xs uppercase text-dim" numberOfLines={1}>
+              // settings
+            </Text>
           </Pressable>
-        </View>
+        }
+      />
 
-        {loading ? (
-          <View className="mx-6 flex-row items-center gap-3 rounded border border-white/10 bg-surface p-4">
-            <ActivityIndicator size="small" color="#A855F7" />
-            <Text className="font-kr text-sm text-dim">프로필을 불러오는 중...</Text>
-          </View>
-        ) : (
-          <View className="mx-6 rounded border border-white/10 bg-surface p-5">
-            <View className="flex-row items-center gap-4">
-              <View
-                className="h-20 w-20 items-center justify-center rounded-full bg-violet/20"
-                style={{
-                  shadowColor: "#A855F7",
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 16,
-                }}
-              >
-                <Text className="font-kr text-3xl font-bold text-violet-glow">
-                  {initial}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-kr text-xl font-bold text-fg">{displayName}</Text>
-                <Text className="font-mono text-xs text-cyan" numberOfLines={1}>
-                  {displayEmail}
-                </Text>
-                <View className="mt-2 self-start rounded border border-cyan/40 bg-cyan/10 px-2 py-1">
-                  <Text className="font-mono text-[10px] uppercase text-cyan">
-                    FREE · {tierLabel}
+      <ScrollView className="flex-1">
+        <View className="mx-6 mt-4">
+          {loading ? (
+            <LoadingState message="프로필 불러오는 중..." />
+          ) : (
+            <Card className="p-5">
+              <View className="flex-row items-center gap-4">
+                <View
+                  className="h-20 w-20 items-center justify-center rounded-full bg-violet/20"
+                  style={{
+                    shadowColor: "#A855F7",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 16,
+                  }}
+                >
+                  <Text
+                    className="font-kr text-3xl font-bold text-violet-glow"
+                    numberOfLines={1}
+                  >
+                    {initial}
                   </Text>
                 </View>
+                <View className="flex-1">
+                  <Text
+                    className="font-kr text-xl font-bold text-fg"
+                    numberOfLines={1}
+                  >
+                    {displayName}
+                  </Text>
+                  <Text
+                    className="font-mono text-xs text-cyan"
+                    numberOfLines={1}
+                  >
+                    {displayEmail}
+                  </Text>
+                  <View className="mt-2 self-start rounded border border-cyan/40 bg-cyan/10 px-2 py-1">
+                    <Text
+                      className="font-mono text-[10px] uppercase text-cyan"
+                      numberOfLines={1}
+                    >
+                      FREE · {tierLabel}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </View>
-            {error && (
-              <Text className="mt-3 font-mono text-[10px] text-danger">// {error}</Text>
-            )}
-          </View>
-        )}
+              {error && (
+                <Text className="mt-3 font-mono text-[10px] text-danger">
+                  // {error}
+                </Text>
+              )}
+            </Card>
+          )}
+        </View>
 
         <View className="mx-6 mt-4 flex-row flex-wrap gap-3">
-          <View className="w-[48%] rounded border border-white/10 bg-surface p-4">
-            <Text className="font-mono text-2xl text-cyan">{stats.bookmarks}</Text>
-            <Text className="mt-1 font-mono text-[10px] uppercase text-dim">
-              // 북마크
-            </Text>
+          <View className="w-[48%]">
+            <Card>
+              <Text
+                className="font-mono text-2xl text-cyan"
+                numberOfLines={1}
+              >
+                {stats.bookmarks}
+              </Text>
+              <Text
+                className="mt-1 font-mono text-[10px] uppercase text-dim"
+                numberOfLines={1}
+              >
+                // 북마크
+              </Text>
+            </Card>
           </View>
-          <View className="w-[48%] rounded border border-white/10 bg-surface p-4">
-            <Text className="font-mono text-2xl text-cyan">{stats.notes}</Text>
-            <Text className="mt-1 font-mono text-[10px] uppercase text-dim">
-              // 저장한 노트
-            </Text>
+          <View className="w-[48%]">
+            <Card>
+              <Text
+                className="font-mono text-2xl text-cyan"
+                numberOfLines={1}
+              >
+                {stats.notes}
+              </Text>
+              <Text
+                className="mt-1 font-mono text-[10px] uppercase text-dim"
+                numberOfLines={1}
+              >
+                // 저장한 노트
+              </Text>
+            </Card>
           </View>
-          <View className="w-[48%] rounded border border-white/10 bg-surface p-4">
-            <Text className="font-mono text-2xl text-violet-glow">{stats.starred}</Text>
-            <Text className="mt-1 font-mono text-[10px] uppercase text-dim">
-              // 즐겨찾기
-            </Text>
+          <View className="w-[48%]">
+            <Card>
+              <Text
+                className="font-mono text-2xl text-violet-glow"
+                numberOfLines={1}
+              >
+                {stats.starred}
+              </Text>
+              <Text
+                className="mt-1 font-mono text-[10px] uppercase text-dim"
+                numberOfLines={1}
+              >
+                // 즐겨찾기
+              </Text>
+            </Card>
           </View>
-          <View className="w-[48%] rounded border border-white/10 bg-surface p-4">
-            <Text className="font-mono text-2xl text-violet-glow">🎁</Text>
-            <Text className="mt-1 font-mono text-[10px] uppercase text-dim">
-              // 무료 체험 중
-            </Text>
+          <View className="w-[48%]">
+            <Card>
+              <Text className="font-mono text-2xl text-violet-glow">🎁</Text>
+              <Text
+                className="mt-1 font-mono text-[10px] uppercase text-dim"
+                numberOfLines={1}
+              >
+                // 무료 체험 중
+              </Text>
+            </Card>
           </View>
         </View>
 
@@ -185,12 +244,23 @@ export default function ProfileScreen() {
                 onPress={() => router.push(link.href as any)}
                 accessibilityRole="link"
                 accessibilityLabel={link.label}
-                className={`flex-row items-center justify-between p-4 ${
+                className={`h-14 flex-row items-center justify-between px-4 ${
                   i > 0 ? "border-t border-white/5" : ""
                 }`}
+                style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
               >
-                <Text className="font-kr text-base text-fg">{link.label}</Text>
-                <Text className="font-mono text-xs text-dim">→</Text>
+                <Text
+                  className="flex-1 mr-3 font-kr text-base text-fg"
+                  numberOfLines={1}
+                >
+                  {link.label}
+                </Text>
+                <Text
+                  className="font-mono text-xs text-dim"
+                  numberOfLines={1}
+                >
+                  →
+                </Text>
               </Pressable>
             ))}
           </View>
