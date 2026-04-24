@@ -2,6 +2,53 @@
 
 > **상태**: 초안 (Phase B1~B5 구현 완료 기준). 출시 전 각 섹션을 실제 계정/프로젝트 정보로 교체하세요.
 
+## 최근 빌드 이력 (2026-04-24)
+
+| 빌드 | ID | 결과 | 아티팩트 |
+|------|----|------|----------|
+| iOS Simulator (development) | `c30f9218-08e6-4c14-a4d8-9e074edde1a4` | ✅ finished | `https://expo.dev/artifacts/eas/q63tqTRXxqiApyYk4U48tS.tar.gz` |
+| Android APK (preview) | 5회 시도 모두 errored | ❌ blocked | SDK 52 + RN 0.76 + react-native-worklets 호환성 드리프트 (상세: Brain `FP-EAS-Android-worklets`) |
+| iOS TestFlight (preview) | — | ⚠️ blocked | Apple Developer 계정 필수 (credentials 등록 안 됨) |
+
+**iOS Simulator 빌드 사용법**:
+```bash
+# Mac에서 다운로드 + 압축 해제
+curl -L -o /tmp/law-os.tar.gz "https://expo.dev/artifacts/eas/q63tqTRXxqiApyYk4U48tS.tar.gz"
+mkdir -p /tmp/law-os && tar -xzf /tmp/law-os.tar.gz -C /tmp/law-os
+# Xcode Simulator 실행 후 .app 드래그 드롭, 또는:
+xcrun simctl install booted /tmp/law-os/LAW.OS.app
+xcrun simctl launch booted kr.lawos.app
+```
+
+**Android 빌드 재시도 조건**:
+- Expo SDK 53 이상으로 업그레이드 (`npx expo install expo@latest` + 가이드 마이그레이션)
+- 또는 `react-native-worklets@^0.4.0` 으로 pin 시도
+- iOS는 동일 코드로 빌드 성공 — 플랫폼 별 네이티브 체크 차이
+
+## 실제 등록된 인프라 (2026-04-24 기준)
+
+| 항목 | 값 |
+|------|-----|
+| EAS 계정 (owner) | `sioxgap409` |
+| EAS Project ID | `3da755bb-da5f-47fe-b265-30da2604b01f` |
+| EAS Project URL | https://expo.dev/accounts/sioxgap409/projects/law-os |
+| EAS Update URL | `https://u.expo.dev/3da755bb-da5f-47fe-b265-30da2604b01f` |
+| iOS Bundle ID | `kr.lawos.app` |
+| Android Package | `kr.lawos.app` |
+| Expo SDK | 52.0.0 |
+
+위 값들은 `mobile/app.json` 과 `mobile/eas.json` 에 이미 반영되어 있습니다.
+
+## 필요한 사용자 계정 (미등록 상태 체크)
+
+| 계정 | 필요 여부 | 현재 상태 |
+|------|----------|-----------|
+| Apple Developer Program ($99/년) | iOS 출시 필수 | 미등록 (preview iOS 빌드 시 credentials 오류) |
+| Google Play Console ($25 1회) | Android 출시 필수 | 미등록 |
+| Sentry | 에러 모니터링 | DSN 미등록 (`eas env:list` 비어있음) |
+| Supabase Production 프로젝트 | 프로덕션 DB | 미등록 (dev만 있음) |
+| Firebase FCM | Android 푸시 | 미등록 (`google-services.json` 없음) |
+
 ## 환경 분리 원칙
 
 세 개의 환경을 분리합니다:
