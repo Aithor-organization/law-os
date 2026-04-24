@@ -62,7 +62,6 @@
         }
       ]
     ],
-    "_comment_sentry_plugin": "Sentry plugin (@sentry/react-native/expo) should be re-added once SENTRY_AUTH_TOKEN is provisioned via eas env:create. Enabling it without the token causes 'Auth token is required' during :app:createBundleReleaseJsAndAssets_SentryUpload gradle task. See docs/deployment.md §3.",
     "experiments": {
       "typedRoutes": true
     },
