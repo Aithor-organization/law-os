@@ -58,15 +58,22 @@ export async function signOut() {
 
 // Permanently deletes the current user's account and all owned rows
 // (conversations/messages/notes/bookmarks/study_activities/profile) via
-// an RPC that runs as SECURITY DEFINER. Client follows up with a local
-// signOut() so the cached session is cleared even if the RPC partially
-// succeeded. PIPA §21 compliance.
+// an RPC that runs as SECURITY DEFINER. PIPA §21 compliance.
+//
+// IMPORTANT: we only clear the local session when the RPC has confirmed
+// success. On failure (network, RPC error, timeout) we leave the session
+// intact so the user can retry or contact support — and so support can
+// see the server-side state. Clearing the session on failure would leave
+// deletion in an ambiguous, unresolvable state for an irreversible op.
 export async function deleteAccount(): Promise<{ error: Error | null }> {
   const { error } = await supabase.rpc("delete_my_account");
-  // Best-effort: clear local session regardless of RPC outcome so the
-  // user doesn't stay "signed in" against a deleted auth row.
-  await supabase.auth.signOut().catch(() => {});
-  return { error: error as Error | null };
+  if (error) {
+    return { error: error as Error };
+  }
+  // RPC confirmed success — now clear local session. If signOut itself
+  // fails (rare — auth row already deleted), we surface that separately.
+  const signOutRes = await supabase.auth.signOut();
+  return { error: (signOutRes.error as Error | null) ?? null };
 }
 
 export async function getCurrentSession() {

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { signUpWithEmail, recordConsent } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import { getPendingSignup, clearPendingSignup } from "@/lib/pendingSignup";
 
 const CONSENTS = [
@@ -11,16 +12,19 @@ const CONSENTS = [
     key: "tos",
     title: "이용약관 동의 (필수)",
     body: "서비스 이용 조건 및 책임 범위에 대한 약관입니다.",
+    href: "/profile/tos" as const,
   },
   {
     key: "privacy",
     title: "개인정보 처리방침 동의 (필수)",
     body: "이메일, 이름, 학습 기록 등 수집·이용에 대한 고지입니다.",
+    href: "/profile/privacy" as const,
   },
   {
     key: "legal",
     title: "법적 고지 동의 (필수)",
     body: "LAW.OS는 법학 학습 도구이며 법률 자문이 아닙니다. 구체적인 법률 문제는 반드시 변호사에게 상담하세요.",
+    href: "/profile/legal" as const,
   },
 ];
 
@@ -66,14 +70,24 @@ export default function ConsentDisclaimerScreen() {
     }
 
     // Session active → write consent timestamps to profiles row (DB trigger
-    // already created it).
+    // already created it). PIPA requires a durable audit trail; if this
+    // write fails we must not leave a consent-less account behind, so we
+    // sign out as a best-effort rollback. A full server-side delete would
+    // be better but requires an admin-scoped edge function.
     const consentResult = await recordConsent(pending.name);
     setSubmitting(false);
-    clearPendingSignup();
     if (consentResult.error) {
-      Alert.alert("프로필 저장 실패", consentResult.error.message);
+      // Roll back local session so the consent-less account can't be used.
+      // The orphan auth row itself still exists — flag for support follow-up.
+      await supabase.auth.signOut().catch(() => {});
+      Alert.alert(
+        "가입 실패 · 재시도 필요",
+        `동의 정보 저장에 실패했습니다 (${consentResult.error.message}). 네트워크를 확인하고 다시 가입해주세요. 문제가 지속되면 support@lawos.kr 로 연락주세요.`,
+        [{ text: "가입 화면으로", onPress: () => router.replace("/(auth)/signup" as any) }],
+      );
       return;
     }
+    clearPendingSignup();
     router.replace("/(auth)/onboarding" as any);
   };
 
@@ -140,9 +154,20 @@ export default function ConsentDisclaimerScreen() {
                   )}
                 </View>
               </View>
-              <Text className="mt-3 font-mono text-[10px] uppercase text-cyan">
-                // 전문 보기 →
-              </Text>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  router.push(c.href as any);
+                }}
+                hitSlop={8}
+                accessibilityRole="link"
+                accessibilityLabel={`${c.title} 전문 보기`}
+                className="mt-3 self-start"
+              >
+                <Text className="font-mono text-[10px] uppercase text-cyan">
+                  // 전문 보기 →
+                </Text>
+              </Pressable>
             </Pressable>
           ))}
         </View>

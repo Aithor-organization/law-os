@@ -223,6 +223,16 @@ export default function ActiveChatScreen() {
         );
       }
 
+      // Per-message trust signal — uncited AI answers in a legal-domain app
+      // are the highest hallucination risk. A top-of-screen banner alone is
+      // not enough. When citations.length === 0 we:
+      //   1. drop the accent bar to danger-tinted
+      //   2. prepend a "출처 없음" warning chip before the body
+      //   3. tone down the body text opacity
+      // Save/share flows (bottom-sheet actions) should gate on this too —
+      // wiring below in message actions.
+      const hasCitations = msg.citations.length > 0;
+      const accentBar = hasCitations ? "bg-violet" : "bg-danger/60";
       return (
         <View className="mb-6">
           <View className="mb-2 flex-row items-center gap-2">
@@ -234,10 +244,27 @@ export default function ActiveChatScreen() {
             </Text>
           </View>
           <View className="flex-row">
-            <View className="mr-3 w-0.5 rounded-full bg-violet" />
+            <View className={`mr-3 w-0.5 rounded-full ${accentBar}`} />
             <View className="flex-1 rounded bg-surface p-4">
-              <Markdown style={markdownStyles}>{msg.content}</Markdown>
-              {msg.citations.length > 0 && (
+              {!hasCitations ? (
+                <View
+                  accessible
+                  accessibilityLabel="출처 없는 답변 경고"
+                  className="mb-3 flex-row items-center gap-2 rounded border border-danger/40 bg-danger/10 px-3 py-2"
+                >
+                  <Text className="font-mono text-[10px] text-danger">⚠</Text>
+                  <Text
+                    className="flex-1 font-kr text-[11px] leading-4 text-danger"
+                    numberOfLines={2}
+                  >
+                    출처 없는 답변. 법령·판례와 직접 대조하세요.
+                  </Text>
+                </View>
+              ) : null}
+              <View style={{ opacity: hasCitations ? 1 : 0.85 }}>
+                <Markdown style={markdownStyles}>{msg.content}</Markdown>
+              </View>
+              {hasCitations && (
                 <View className="mt-4 gap-2 border-t border-white/5 pt-4">
                   <Text className="font-mono text-[10px] uppercase tracking-wider text-cyan">
                     // citations · {msg.citations.length}
