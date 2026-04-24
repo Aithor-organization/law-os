@@ -15,6 +15,7 @@ import Markdown from "react-native-markdown-display";
 import { listMessages, type Message } from "@/lib/conversations";
 import { sendChatMessage, type ChatTier, type LawRecommendation } from "@/lib/chat";
 import { subscribeLaw } from "@/lib/laws";
+import { DisclaimerBanner } from "@/components/ui/DisclaimerBanner";
 
 // Dark Academia Pro markdown styles
 const markdownStyles = {
@@ -458,6 +459,9 @@ export default function ActiveChatScreen() {
           <Text className="font-mono text-xs text-dim">⋯</Text>
         </Pressable>
       </View>
+
+      {/* 법적 고지 — 변호사법 §109 compliance */}
+      <DisclaimerBanner />
 
       {/* Mode toggle */}
       <View className="flex-row items-center justify-center gap-3 border-b border-white/5 px-6 py-2">

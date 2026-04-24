@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { insertMessage, touchConversation } from "./conversations";
+import { recordActivity } from "./studyActivity";
 
 // Chat backend URL.
 // FastAPI backend is now the primary and required chat path.
@@ -165,6 +166,7 @@ export async function sendChatMessage(params: {
   //    Only refresh conversation metadata if we actually received a full response.
   if (!aborted && assistantContent.length > 0) {
     await touchConversation(params.conversationId, 2);
+    void recordActivity("questions_asked");
   }
 
   return { assistantContent, error: streamError, aborted };

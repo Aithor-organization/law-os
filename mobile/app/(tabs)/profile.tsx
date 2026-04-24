@@ -4,8 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { getProfile, type Profile } from "@/lib/auth";
-import { listBookmarks } from "@/lib/bookmarks";
-import { listNotes } from "@/lib/notes";
+import { countBookmarks } from "@/lib/bookmarks";
+import { countNotes } from "@/lib/notes";
 import { getStreak } from "@/lib/stats";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { LoadingState } from "@/components/ui/FeedbackState";
@@ -41,6 +41,7 @@ const MENU_SECTIONS: MenuSection[] = [
     links: [
       { label: "프로필 편집", href: "/profile/edit" },
       { label: "로그아웃", href: "/modals/logout" },
+      { label: "계정 삭제", href: "/profile/delete-account" },
     ],
   },
   {
@@ -89,11 +90,11 @@ export default function ProfileScreen() {
     setLoading(true);
     setError(null);
 
-    const [profileRes, bookmarksRes, notesRes, starredRes, streak] = await Promise.all([
+    const [profileRes, bookmarksCount, notesCount, starredCount, streak] = await Promise.all([
       getProfile(),
-      listBookmarks(),
-      listNotes({ limit: 1 }),
-      listNotes({ starred: true, limit: 1 }),
+      countBookmarks(),
+      countNotes(),
+      countNotes({ starred: true }),
       getStreak(),
     ]);
 
@@ -103,12 +104,12 @@ export default function ProfileScreen() {
       setProfile(profileRes.data);
     }
 
-    // Fetch real counts via HEAD-style queries — for MVP we use full fetch with
-    // limit: 1 plus separate count queries could be added once row volume grows.
+    // HEAD-style count queries (count: 'exact', head: true) — no row fetch,
+    // stays cheap as bookmark/note volumes grow.
     setStats({
-      bookmarks: bookmarksRes.data.length,
-      notes: notesRes.data.length,
-      starred: starredRes.data.length,
+      bookmarks: bookmarksCount.count,
+      notes: notesCount.count,
+      starred: starredCount.count,
       streakDays: streak.current,
       bestStreak: streak.best,
     });

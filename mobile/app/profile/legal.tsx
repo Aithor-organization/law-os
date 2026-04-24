@@ -25,10 +25,17 @@ const SECTIONS = [
   },
 ];
 
+// In-app routes take precedence. External URLs are kept as fallback for
+// items that require a canonical public version (e.g. OSS license list).
 const LEGAL_HOST = "https://lawos.kr/legal";
-const LINKS = [
-  { label: "이용약관 전문", url: `${LEGAL_HOST}/tos` },
-  { label: "개인정보 처리방침", url: `${LEGAL_HOST}/privacy` },
+
+type LegalLink =
+  | { label: string; internal: string }
+  | { label: string; url: string };
+
+const LINKS: LegalLink[] = [
+  { label: "이용약관 전문", internal: "/profile/tos" },
+  { label: "개인정보 처리방침", internal: "/profile/privacy" },
   { label: "오픈소스 라이선스", url: `${LEGAL_HOST}/oss` },
 ];
 
@@ -84,18 +91,24 @@ export default function LegalScreen() {
             // 관련 문서
           </Text>
           <View className="mt-4 gap-2">
-            {LINKS.map((l) => (
-              <Pressable
-                key={l.url}
-                onPress={() => void openExternal(l.url)}
-                accessibilityRole="link"
-                accessibilityLabel={l.label}
-                className="flex-row items-center justify-between rounded-[6px] border border-white/10 bg-surface-high px-4 py-4"
-              >
-                <Text className="font-kr text-sm text-fg">{l.label}</Text>
-                <Text className="font-mono text-xs text-dim">↗</Text>
-              </Pressable>
-            ))}
+            {LINKS.map((l) => {
+              const isInternal = "internal" in l;
+              const key = isInternal ? l.internal : l.url;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() =>
+                    isInternal ? router.push(l.internal as any) : void openExternal(l.url)
+                  }
+                  accessibilityRole="link"
+                  accessibilityLabel={l.label}
+                  className="flex-row items-center justify-between rounded-[6px] border border-white/10 bg-surface-high px-4 py-4"
+                >
+                  <Text className="font-kr text-sm text-fg">{l.label}</Text>
+                  <Text className="font-mono text-xs text-dim">{isInternal ? "→" : "↗"}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 

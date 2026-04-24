@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Linear-style optimistic toggle hook.
@@ -49,6 +49,16 @@ export function useOptimisticToggle<T>(
   // Ref so the latest callback captures the current value without
   // re-creating the function on every render.
   const busyRef = useRef(false);
+
+  // Sync to `initial` when the caller owns the source of truth and it
+  // arrives async (e.g. a detail screen that loads bookmark state after
+  // the first render). Skip during an in-flight toggle to avoid clobbering
+  // the optimistic value.
+  useEffect(() => {
+    if (!busyRef.current) {
+      setValue(initial);
+    }
+  }, [initial]);
 
   const toggle = useCallback(
     async (next: T) => {

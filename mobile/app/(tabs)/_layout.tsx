@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { Text, View } from "react-native";
 import { Icon, ICON_COLOR } from "@/components/ui/Icon";
 import { listConversations } from "@/lib/conversations";
+import { subscribeConversationChanged } from "@/lib/conversationEvents";
 
 type TabIconKey = "chat" | "search" | "library" | "profile";
 
@@ -70,6 +71,12 @@ export default function TabsLayout() {
 
   useEffect(() => {
     void refetchChatBadge();
+    // Live refresh: any conversation create/delete/archive anywhere in the
+    // app emits on the bus; the badge refetches and stays accurate.
+    const unsubscribe = subscribeConversationChanged(() => {
+      void refetchChatBadge();
+    });
+    return unsubscribe;
   }, [refetchChatBadge]);
 
   return (

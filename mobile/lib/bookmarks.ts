@@ -77,6 +77,22 @@ export async function isBookmarked(params: {
   return Boolean(data?.id);
 }
 
+// Count bookmarks without fetching rows (profile stats).
+export async function countBookmarks(
+  sourceType?: BookmarkSourceType,
+): Promise<{ count: number; error: Error | null }> {
+  let query = supabase
+    .from("user_bookmarks")
+    .select("id", { count: "exact", head: true });
+
+  if (sourceType) {
+    query = query.eq("source_type", sourceType);
+  }
+
+  const { count, error } = await query;
+  return { count: count ?? 0, error: error as Error | null };
+}
+
 export async function listBookmarks(
   sourceType?: BookmarkSourceType,
 ): Promise<{ data: Bookmark[]; error: Error | null }> {

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { recordActivity } from "./studyActivity";
 
 export type NoteSubject = "civil" | "criminal" | "constitutional" | "commercial" | "other";
 
@@ -48,6 +49,10 @@ export async function createNote(params: {
     .select()
     .single();
 
+  if (data && !error) {
+    void recordActivity("notes_saved");
+  }
+
   return {
     data: (data as Note | null) ?? null,
     error: error as Error | null,
@@ -73,6 +78,16 @@ export async function listNotes(params?: {
     data: (data as Note[]) ?? [],
     error: error as Error | null,
   };
+}
+
+// Count notes without fetching rows. Used by profile stats.
+export async function countNotes(params?: {
+  starred?: boolean;
+}): Promise<{ count: number; error: Error | null }> {
+  let q = supabase.from("notes").select("id", { count: "exact", head: true });
+  if (params?.starred !== undefined) q = q.eq("starred", params.starred);
+  const { count, error } = await q;
+  return { count: count ?? 0, error: error as Error | null };
 }
 
 export async function getNote(
@@ -125,5 +140,10 @@ export async function markNoteReviewed(id: string): Promise<{ error: Error | nul
       review_count: nextCount,
     })
     .eq("id", id);
+
+  if (!error) {
+    void recordActivity("reviews_completed");
+  }
+
   return { error: error as Error | null };
 }

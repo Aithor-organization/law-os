@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import { isBookmarked, toggleBookmark } from "@/lib/bookmarks";
 import { getStatuteDetail, type StatuteDetail } from "@/lib/statutes";
+import { useOptimisticToggle } from "@/lib/useOptimisticToggle";
 
 /**
  * 🎨 Stitch Reference: projects/7657386961511176864/screens/bc5c1098ac194cc9a3dd95688c4bb06a
@@ -32,8 +33,21 @@ export default function StatuteDetailScreen() {
   const [statute, setStatute] = useState<StatuteDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [initialBookmarked, setInitialBookmarked] = useState(false);
+
+  const [bookmarked, setBookmark, bookmarkBusy] = useOptimisticToggle(
+    initialBookmarked,
+    async (next) => {
+      if (!statuteId) return { ok: false, error: "no statute id" };
+      const res = await toggleBookmark({
+        sourceType: "statute",
+        sourceId: statuteId,
+      });
+      if (res.error) return { ok: false, error: res.error.message };
+      return { ok: true, value: res.bookmarked };
+    },
+    { onError: (msg) => Alert.alert("북마크 실패", msg) },
+  );
 
   useEffect(() => {
     if (!statuteId) return;
@@ -49,7 +63,7 @@ export default function StatuteDetailScreen() {
       if (cancelled) return;
 
       setLoading(false);
-      setBookmarked(bookmarkState);
+      setInitialBookmarked(bookmarkState);
       if (detailResult.error || !detailResult.data) {
         setError(detailResult.error?.message ?? "조문을 불러오지 못했습니다.");
         return;
@@ -65,23 +79,8 @@ export default function StatuteDetailScreen() {
   }, [statuteId]);
 
   const onToggleBookmark = useCallback(async () => {
-    if (!statuteId || bookmarkBusy) return;
-    setBookmarkBusy(true);
-    const previous = bookmarked;
-    // Optimistic toggle.
-    setBookmarked(!previous);
-    const { bookmarked: next, error: bookmarkError } = await toggleBookmark({
-      sourceType: "statute",
-      sourceId: statuteId,
-    });
-    setBookmarkBusy(false);
-    if (bookmarkError) {
-      setBookmarked(previous);
-      Alert.alert("북마크 실패", bookmarkError.message);
-      return;
-    }
-    setBookmarked(next);
-  }, [statuteId, bookmarked, bookmarkBusy]);
+    await setBookmark(!bookmarked);
+  }, [setBookmark, bookmarked]);
 
   const onShare = useCallback(async () => {
     if (!statute) return;

@@ -41,9 +41,32 @@ export async function signInWithEmail(email: string, password: string) {
   return { data, error };
 }
 
+import { unregisterPushToken } from "./pushTokens";
+
 export async function signOut() {
+  // Best-effort unregister push token before signOut so RLS still lets
+  // the delete through. After signOut auth.uid() becomes null and the
+  // policy would reject the delete.
+  try {
+    await unregisterPushToken();
+  } catch {
+    // swallow — push notifications may be unavailable (simulator, denied)
+  }
   const { error } = await supabase.auth.signOut();
   return { error };
+}
+
+// Permanently deletes the current user's account and all owned rows
+// (conversations/messages/notes/bookmarks/study_activities/profile) via
+// an RPC that runs as SECURITY DEFINER. Client follows up with a local
+// signOut() so the cached session is cleared even if the RPC partially
+// succeeded. PIPA §21 compliance.
+export async function deleteAccount(): Promise<{ error: Error | null }> {
+  const { error } = await supabase.rpc("delete_my_account");
+  // Best-effort: clear local session regardless of RPC outcome so the
+  // user doesn't stay "signed in" against a deleted auth row.
+  await supabase.auth.signOut().catch(() => {});
+  return { error: error as Error | null };
 }
 
 export async function getCurrentSession() {

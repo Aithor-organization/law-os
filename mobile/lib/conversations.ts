@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { emitConversationChanged } from "./conversationEvents";
 
 export type Conversation = {
   id: string;
@@ -70,6 +71,10 @@ export async function createConversation(params: {
     .select()
     .single();
 
+  if (data && !error) {
+    emitConversationChanged();
+  }
+
   return { data: data as Conversation | null, error: error as Error | null };
 }
 
@@ -107,6 +112,23 @@ export async function getConversation(
 
 export async function deleteConversation(id: string) {
   const { error } = await supabase.from("conversations").delete().eq("id", id);
+  if (!error) {
+    emitConversationChanged();
+  }
+  return { error: error as Error | null };
+}
+
+export async function archiveConversation(
+  id: string,
+  archived: boolean,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from("conversations")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (!error) {
+    emitConversationChanged();
+  }
   return { error: error as Error | null };
 }
 
