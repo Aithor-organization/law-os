@@ -4,11 +4,25 @@
 
 ## 최근 빌드 이력 (2026-04-24)
 
+### 초기 SDK 52 시도 (실패)
+- iOS Simulator (SDK 52) `c30f9218-...`: ✅ finished — 단 Android 호환 문제 우회 덕분
+- Android preview APK: 5회 시도 모두 errored (SDK 52 + RN 0.76 + worklets 드리프트)
+
+### SDK 55 업그레이드 후 ✅
+
 | 빌드 | ID | 결과 | 아티팩트 |
 |------|----|------|----------|
-| iOS Simulator (development) | `c30f9218-08e6-4c14-a4d8-9e074edde1a4` | ✅ finished | `https://expo.dev/artifacts/eas/q63tqTRXxqiApyYk4U48tS.tar.gz` |
-| Android APK (preview) | 5회 시도 모두 errored | ❌ blocked | SDK 52 + RN 0.76 + react-native-worklets 호환성 드리프트 (상세: Brain `FP-EAS-Android-worklets`) |
+| Android APK (preview) | `69136c5f-09d7-41f7-880a-8b550c58c16e` | ✅ finished | `https://expo.dev/artifacts/eas/dYyCtFutCfDA7QaDbaR9xh.apk` |
+| iOS Simulator (development) | `98ab3a94-e99c-4521-ab72-86f9e56cba12` | 🟡 in-progress → 완료 후 교체 | — |
 | iOS TestFlight (preview) | — | ⚠️ blocked | Apple Developer 계정 필수 (credentials 등록 안 됨) |
+
+### SDK 52 → 55 업그레이드 내용
+- `expo`: `~52.0.0` → `^55.0.17`
+- `react-native`: `0.76.9` → `0.83.6`
+- `react`: `18.3.1` → `19.2.0`
+- `app.json`에서 `newArchEnabled: false` 제거 (SDK 55부터 new arch 기본 활성)
+- `react-native-worklets` Gradle 호환성 이슈 자동 해소
+- expo-doctor 18/18 통과, TypeScript 0 에러
 
 **iOS Simulator 빌드 사용법**:
 ```bash
