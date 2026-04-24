@@ -13,7 +13,7 @@
 | 빌드 | ID | 결과 | 아티팩트 |
 |------|----|------|----------|
 | Android APK (preview) | `69136c5f-09d7-41f7-880a-8b550c58c16e` | ✅ finished | `https://expo.dev/artifacts/eas/dYyCtFutCfDA7QaDbaR9xh.apk` |
-| iOS Simulator (development) | `98ab3a94-e99c-4521-ab72-86f9e56cba12` | 🟡 in-progress → 완료 후 교체 | — |
+| iOS Simulator (development) | `98ab3a94-e99c-4521-ab72-86f9e56cba12` | ✅ finished | `https://expo.dev/artifacts/eas/jRqNQKTBZ6Nw1KVcJGiezu.tar.gz` |
 | iOS TestFlight (preview) | — | ⚠️ blocked | Apple Developer 계정 필수 (credentials 등록 안 됨) |
 
 ### SDK 52 → 55 업그레이드 내용
