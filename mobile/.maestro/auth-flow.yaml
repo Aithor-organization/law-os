@@ -1,0 +1,69 @@
+appId: kr.lawos.app
+name: Auth → First chat → Disclaimer visible
+tags:
+  - smoke
+  - auth
+---
+- launchApp:
+    clearState: true
+
+# Splash → 로그인 화면
+- assertVisible: "로그인"
+
+# 회원가입 분기로 진입
+- tapOn: "회원가입"
+- assertVisible:
+    text: "이메일"
+
+# 고유 테스트 계정 — timestamp 로 충돌 회피
+- inputText: "e2e-${output.timestamp}@lawos-test.kr"
+- runFlow:
+    env:
+      timestamp: ${Date.now()}
+
+- tapOn:
+    id: "password-input"
+- inputText: "TestPassword123!"
+
+- tapOn: "가입하기"
+
+# 약관 동의 화면 (있다면)
+- runFlow:
+    when:
+      visible: "약관"
+    commands:
+      - tapOn: "모두 동의"
+      - tapOn: "계속"
+
+# 온보딩 (사용자 유형 선택)
+- runFlow:
+    when:
+      visible: "로스쿨"
+    commands:
+      - tapOn: "로스쿨"
+      - tapOn: "완료"
+
+# 대화 탭 진입
+- assertVisible: "LAW.OS"
+
+# 새 채팅 생성
+- tapOn: "+ 새 대화"
+
+# 디스클레이머 배너 검증 — 변호사법 §109 노출 필수
+- assertVisible:
+    text: "변호사법"
+
+# 첫 질문 전송
+- tapOn:
+    id: "chat-input"
+- inputText: "민법 제103조의 요건을 설명해줘"
+- tapOn:
+    id: "send-button"
+
+# 응답 스트리밍 대기 (최대 30초)
+- extendedWaitUntil:
+    visible: "// citations"
+    timeout: 30000
+
+# 팔로우업 제안 표시 확인
+- assertVisible: "이어서 질문하기"

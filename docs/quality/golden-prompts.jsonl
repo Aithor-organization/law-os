@@ -1,0 +1,20 @@
+{"id":"gp-001","subject":"civil","prompt":"민법 제103조 반사회질서의 법률행위는 언제 무효가 되는지 설명해주세요","expected_topics":["반사회질서","선량한 풍속","무효","공서양속"]}
+{"id":"gp-002","subject":"civil","prompt":"민법 제109조 착오에 의한 의사표시가 취소되려면 어떤 요건이 필요한가요?","expected_topics":["착오","중요 부분","중과실","취소"]}
+{"id":"gp-003","subject":"civil","prompt":"매매계약에서 매도인의 하자담보책임과 채무불이행책임의 차이를 설명해주세요","expected_topics":["하자담보책임","채무불이행","선의 무과실","제척기간"]}
+{"id":"gp-004","subject":"civil","prompt":"민법상 불법행위의 성립요건 5가지를 설명해주세요","expected_topics":["고의 과실","위법성","손해","인과관계","책임능력"]}
+{"id":"gp-005","subject":"civil","prompt":"민법 제750조 불법행위와 제390조 채무불이행의 손해배상 범위가 어떻게 다른가요?","expected_topics":["통상손해","특별손해","이행이익","신뢰이익"]}
+{"id":"gp-006","subject":"criminal","prompt":"형법 제12조 정당방위의 요건을 설명해주세요","expected_topics":["현재의 부당한 침해","자기 또는 타인","방위의사","상당성"]}
+{"id":"gp-007","subject":"criminal","prompt":"형법 제13조 정당방위와 과잉방위의 차이는?","expected_topics":["상당성","정황","면제","감경"]}
+{"id":"gp-008","subject":"criminal","prompt":"절도죄와 강도죄의 구성요건 차이를 설명해주세요","expected_topics":["폭행 협박","재물","타인","절취","강취"]}
+{"id":"gp-009","subject":"criminal","prompt":"형법 제15조 사실의 착오와 법률의 착오의 차이는?","expected_topics":["구성요건적 착오","금지착오","고의","위법성 인식"]}
+{"id":"gp-010","subject":"criminal","prompt":"형법 제26조 중지범의 성립요건을 설명해주세요","expected_topics":["자의","중지","예비 미수","형의 감면"]}
+{"id":"gp-011","subject":"constitutional","prompt":"헌법 제10조 인간의 존엄과 가치의 의의를 설명해주세요","expected_topics":["기본권","근원","포괄적","행복추구권"]}
+{"id":"gp-012","subject":"constitutional","prompt":"헌법상 기본권 제한의 요건 (제37조 제2항)을 설명해주세요","expected_topics":["국가안전보장","질서유지","공공복리","본질적 내용"]}
+{"id":"gp-013","subject":"constitutional","prompt":"헌법재판소의 위헌법률심판과 헌법소원심판의 차이를 설명해주세요","expected_topics":["법원의 제청","직접성","보충성","청구인 적격"]}
+{"id":"gp-014","subject":"constitutional","prompt":"헌법 제33조 근로3권의 내용과 한계를 설명해주세요","expected_topics":["단결권","단체교섭권","단체행동권","공무원"]}
+{"id":"gp-015","subject":"commercial","prompt":"상법상 회사의 종류 4가지를 설명해주세요","expected_topics":["합명회사","합자회사","유한회사","주식회사"]}
+{"id":"gp-016","subject":"commercial","prompt":"주식회사 이사의 선관주의의무와 충실의무의 차이는?","expected_topics":["선량한 관리자","회사 이익","자기거래","경업금지"]}
+{"id":"gp-017","subject":"commercial","prompt":"상법상 어음과 수표의 차이를 설명해주세요","expected_topics":["지급인","신용","지급","발행"]}
+{"id":"gp-018","subject":"civil","prompt":"민법 제162조 소멸시효와 제척기간의 차이를 설명해주세요","expected_topics":["원용","직권","중단","정지"]}
+{"id":"gp-019","subject":"civil","prompt":"민법 제186조 부동산물권변동의 요건 (물권행위+등기)을 설명해주세요","expected_topics":["물권행위","등기","공시","무인성"]}
+{"id":"gp-020","subject":"civil","prompt":"민법 제750조 공동불법행위자의 책임을 설명해주세요","expected_topics":["연대책임","협의 공동","관련 공동","구상권"]}

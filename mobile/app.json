@@ -7,13 +7,15 @@
     "icon": "./assets/icon.png",
     "scheme": "lawos",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "kr.lawos.app",
@@ -24,7 +26,10 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "판례 사진 등을 기록할 때 카메라에 접근합니다. 사용하지 않으면 거부하셔도 무방합니다.",
-        "NSPhotoLibraryUsageDescription": "판례 사진을 저장하거나 불러올 때 사진 접근 권한이 필요합니다. 사용하지 않으면 거부하셔도 무방합니다."
+        "NSPhotoLibraryUsageDescription": "판례 사진을 저장하거나 불러올 때 사진 접근 권한이 필요합니다. 사용하지 않으면 거부하셔도 무방합니다.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -34,27 +39,53 @@
       },
       "package": "kr.lawos.app",
       "versionCode": 1,
-      "permissions": ["android.permission.INTERNET"]
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "single"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#A855F7",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "SET-SENTRY-ORG-SLUG",
+          "project": "SET-SENTRY-PROJECT-SLUG"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "SET-ON-FIRST-EAS-BUILD"
-      }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {
-      "url": "https://u.expo.dev/SET-AFTER-EAS-INIT"
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "3da755bb-da5f-47fe-b265-30da2604b01f"
+      }
     },
-    "owner": "SET-YOUR-EXPO-USERNAME"
+    "owner": "sioxgap409",
+    "updates": {
+      "url": "https://u.expo.dev/3da755bb-da5f-47fe-b265-30da2604b01f"
+    }
   }
 }

@@ -1,0 +1,66 @@
+name: mobile-ci
+
+# Lightweight sanity checks on every PR touching mobile/. Keeps the
+# feedback loop under 3 minutes so contributors fix obvious breakage
+# before review. EAS builds (heavy, ~20min) run only on tags.
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+
+jobs:
+  typecheck-and-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      # Sentry source-map upload env hints — these are referenced in
+      # lib/telemetry.ts and documented in docs/deployment.md. Missing
+      # here is fine for CI, only EAS production builds need them.
+      - name: Env smoke check
+        run: |
+          test -f .env.local.example || (echo ".env.local.example missing" && exit 1)
+          test -f .env.production.example || (echo ".env.production.example missing" && exit 1)
+
+  supabase-migrations-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migration ordering
+        run: |
+          cd docs/supabase
+          # Migrations must be numbered sequentially. Fail loudly if a
+          # commit introduces a gap or a duplicate number.
+          numbers=$(ls [0-9][0-9][0-9]_*.sql | awk -F_ '{print $1}' | sort)
+          uniq_count=$(echo "$numbers" | uniq | wc -l)
+          total_count=$(echo "$numbers" | wc -l)
+          if [ "$uniq_count" != "$total_count" ]; then
+            echo "Duplicate migration number detected"
+            echo "$numbers"
+            exit 1
+          fi

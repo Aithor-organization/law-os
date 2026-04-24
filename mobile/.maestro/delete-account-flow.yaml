@@ -1,0 +1,52 @@
+appId: kr.lawos.app
+name: Delete account → cannot log back in
+tags:
+  - smoke
+  - destructive
+  - last    # 실행 순서 힌트 — 테스트 데이터 정리 효과
+---
+- launchApp
+
+- tapOn:
+    id: "tab-profile"
+
+# "내 계정" 섹션 펼치기
+- tapOn: "내 계정"
+- tapOn: "계정 삭제"
+
+# 확인 문구 입력 가드 동작 검증
+- assertVisible: "삭제합니다"
+- tapOn:
+    id: "delete-confirm-button"
+- assertVisible:
+    text: "영구 삭제"
+    enabled: false   # 확인 문구 입력 전에는 비활성
+
+- tapOn:
+    id: "delete-confirm-input"
+- inputText: "삭제합니다"
+
+- tapOn:
+    text: "계정 영구 삭제"
+
+# Native Alert 확인
+- assertVisible: "정말 계정을 삭제하시겠습니까"
+- tapOn: "영구 삭제"
+
+# 로그인 화면으로 리다이렉트
+- extendedWaitUntil:
+    visible: "로그인"
+    timeout: 5000
+
+# 삭제된 계정으로 재로그인 시도 → 실패해야 함
+- tapOn:
+    id: "email-input"
+- inputText: "e2e-${output.timestamp}@lawos-test.kr"
+- tapOn:
+    id: "password-input"
+- inputText: "TestPassword123!"
+- tapOn: "로그인"
+
+- extendedWaitUntil:
+    visible: "이메일 또는 비밀번호"
+    timeout: 5000

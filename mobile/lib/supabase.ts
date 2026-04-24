@@ -1,7 +1,7 @@
 import "react-native-url-polyfill/auto";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
+import { secureAuthStorage } from "./secureAuthStorage";
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -19,8 +19,10 @@ if (!url || !anonKey) {
 
 export const supabase = createClient(url ?? "http://localhost", anonKey ?? "anon", {
   auth: {
-    // AsyncStorage for native, localStorage fallback for web.
-    storage: Platform.OS === "web" ? undefined : AsyncStorage,
+    // Native: SecureStore (Keychain / EncryptedSharedPreferences) with
+    // a one-time migration from AsyncStorage. Web: default localStorage.
+    // Guideline 5.1.2(i) — credential-class data must live in Keychain.
+    storage: Platform.OS === "web" ? undefined : secureAuthStorage,
     autoRefreshToken: true,
     persistSession: true,
     // Native apps never use URL-based flows.

@@ -1,0 +1,46 @@
+appId: kr.lawos.app
+name: Search → Bookmark → Profile count reflects
+tags:
+  - smoke
+  - bookmark
+---
+- launchApp
+
+# 이미 로그인된 세션 전제 (auth-flow 뒤 순차 실행)
+- assertVisible: "LAW.OS"
+
+# 검색 탭
+- tapOn:
+    id: "tab-search"
+
+- tapOn:
+    id: "search-input"
+- inputText: "민법 103"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: "민법 제103조"
+    timeout: 10000
+
+# 결과 첫 항목 탭 → 조문 상세
+- tapOn:
+    text: "민법 제103조"
+    index: 0
+
+# 북마크 토글
+- tapOn:
+    id: "bookmark-button"
+
+# Optimistic update — 즉시 반영되어야 함
+- assertVisible:
+    id: "bookmark-button-active"
+
+# 프로필 탭으로 이동
+- tapOn:
+    id: "tab-profile"
+
+# 북마크 카운트 >= 1
+- assertVisible: "북마크"
+- assertNotVisible:
+    text: "0"
+    id: "bookmark-count"

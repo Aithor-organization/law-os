@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { signInWithEmail } from "@/lib/auth";
+import { registerPushToken } from "@/lib/pushTokens";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -21,6 +22,9 @@ export default function LoginScreen() {
       Alert.alert("로그인 실패", error.message);
       return;
     }
+    // Best-effort push token registration — fire and forget so it doesn't
+    // delay the nav. Fails silently on simulator / permission denied.
+    void registerPushToken();
     router.replace("/(tabs)" as any);
   };
 
