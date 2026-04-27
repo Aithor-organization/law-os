@@ -18,7 +18,9 @@ export const metadata: Metadata = {
     "로스쿨",
     "판례 검색",
   ],
-  authors: [{ name: "LAW.OS inc." }],
+  authors: [{ name: "aithor" }],
+  creator: "aithor",
+  publisher: "aithor",
   openGraph: {
     type: "website",
     locale: "ko_KR",
@@ -57,6 +59,8 @@ const jsonLd = {
   applicationCategory: "EducationalApplication",
   operatingSystem: "iOS, Android",
   description: "법학도를 위한 AI 법률 학습 튜터 — 민법/형법/헌법 조문과 판례를 출처와 함께 답변",
+  author: { "@type": "Organization", name: "aithor", url: SITE },
+  publisher: { "@type": "Organization", name: "aithor" },
   offers: {
     "@type": "Offer",
     price: "0",

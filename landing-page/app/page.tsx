@@ -1,11 +1,90 @@
-import { Button } from "@/components/ui/Button";
 import { TerminalCard } from "@/components/ui/TerminalCard";
 
-// 대기자 폼 — 출시 전까지 이 한 곳으로 수렴
-const WAITLIST_URL = "https://tally.so/r/lawos-waitlist";
-// TODO: 앱 출시 후 교체
-// const APP_STORE = "https://apps.apple.com/app/kr.lawos";
-// const GOOGLE_PLAY = "https://play.google.com/store/apps/details?id=kr.lawos";
+// Screenshots used in the in-app gallery section. Add/remove entries to
+// rotate which screens appear on the marketing page. Files live in
+// landing-page/public/screens/.
+const APP_SCREENSHOTS: { src: string; alt: string; caption: string; tag: string }[] = [
+  {
+    src: "/screens/active-chat-stitch.png",
+    alt: "LAW.OS — AI 채팅 화면",
+    caption: "AI 채팅 · 출처 인용 필수",
+    tag: "01 · CHAT",
+  },
+  {
+    src: "/screens/02-search.png",
+    alt: "LAW.OS — 조문/판례 검색",
+    caption: "조문·판례 통합 검색",
+    tag: "02 · SEARCH",
+  },
+  {
+    src: "/screens/05-case-detail.png",
+    alt: "LAW.OS — 판례 상세",
+    caption: "판례 상세 · 관련 조문 자동 연결",
+    tag: "03 · CASE",
+  },
+  {
+    src: "/screens/03-library.png",
+    alt: "LAW.OS — 자동 서재",
+    caption: "자동으로 쌓이는 학습 노트",
+    tag: "04 · LIBRARY",
+  },
+  {
+    src: "/screens/04-profile.png",
+    alt: "LAW.OS — 학습 통계",
+    caption: "연속 학습 · 북마크 통계",
+    tag: "05 · PROFILE",
+  },
+];
+
+// In-app screenshot gallery — horizontal-scrollable strip of phone mockups
+// inspired by App Store screenshot rows. Each card has a violet glow,
+// caption, and tag in the same Dark Academia palette as the rest of the page.
+function ScreenshotGallery() {
+  return (
+    <div
+      className="screenshot-strip flex gap-6 overflow-x-auto pb-6"
+      style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory" }}
+    >
+      {APP_SCREENSHOTS.map((s) => (
+        <div
+          key={s.src}
+          className="shrink-0"
+          style={{ scrollSnapAlign: "start" }}
+        >
+          <div className="relative" style={{ width: 260 }}>
+            {/* glow */}
+            <div
+              className="absolute inset-0 -m-6 rounded-[44px] blur-3xl"
+              style={{ background: "radial-gradient(circle, rgba(168,85,247,0.18), transparent 70%)" }}
+            />
+            {/* phone frame */}
+            <div
+              className="relative overflow-hidden rounded-[36px] bg-surface p-2"
+              style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.3)" }}
+            >
+              <img
+                src={s.src}
+                alt={s.alt}
+                className="block w-full select-none rounded-[28px]"
+                draggable={false}
+                loading="lazy"
+              />
+            </div>
+          </div>
+          <div className="mt-4 px-1">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-violet-glow">
+              {`// ${s.tag}`}
+            </div>
+            <div className="mt-1 font-kr text-sm text-fg">{s.caption}</div>
+          </div>
+        </div>
+      ))}
+      <style>{`
+        .screenshot-strip::-webkit-scrollbar { display: none; }
+      `}</style>
+    </div>
+  );
+}
 
 // iPhone mockup with the actual Stitch Active Chat screenshot — scrollable + auto-scroll loop
 function IPhoneMockup() {
@@ -81,15 +160,18 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <span className="font-mono text-lg font-bold text-violet-glow">LAW.OS</span>
             <span className="font-mono text-[10px] text-cyan">v1.0.0</span>
+            <span className="hidden font-mono text-[10px] text-dim md:inline">
+              · by aithor
+            </span>
           </div>
           <div className="hidden gap-8 font-mono text-xs uppercase text-dim md:flex">
             <a href="#features" className="hover:text-fg">Features</a>
-            <a href="#waitlist" className="hover:text-fg">Waitlist</a>
+            <a href="#screens" className="hover:text-fg">Screens</a>
+            <a href="#scope" className="hover:text-fg">Scope</a>
+            <a href="#about" className="hover:text-fg">About</a>
           </div>
-          <div className="flex items-center gap-2">
-            <a href={WAITLIST_URL} target="_blank" rel="noopener">
-              <Button variant="primary">대기자 등록</Button>
-            </a>
+          <div className="font-mono text-[10px] uppercase text-dim">
+            // 출시 준비 중
           </div>
         </div>
       </nav>
@@ -99,7 +181,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[60%_40%] lg:gap-0">
           <div>
             <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
-              // LAUNCHING SOON · JOIN WAITLIST
+              // COMING SOON · 출시 준비 중
             </div>
             <h1 className="mt-6 font-kr text-6xl font-bold leading-[1.05] tracking-tightest text-fg md:text-7xl lg:text-[84px]">
               법률 공부,
@@ -114,16 +196,8 @@ export default function HomePage() {
               함께 답변하는 AI 튜터. 출시 준비 중입니다.
             </p>
 
-            {/* Waitlist CTA */}
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a href={WAITLIST_URL} target="_blank" rel="noopener">
-                <Button variant="primary" className="h-14 w-full px-8 sm:w-auto">
-                  ✉ 대기자 등록하기
-                </Button>
-              </a>
-            </div>
-            <div className="mt-4 font-mono text-xs text-dim">
-              // 무료 · 출시 시 알림 · 얼리 액세스 우선 제공
+            <div className="mt-10 font-mono text-xs text-dim">
+              // 법학도를 위한 학습 도구 · 법률 상담 아님
             </div>
           </div>
 
@@ -152,7 +226,7 @@ export default function HomePage() {
             <TerminalCard
               tag="01 · ANYWHERE"
               title="어디서나 즉답"
-              footer="// 847k questions this month"
+              footer="// mobile-first"
             >
               통학길 · 카페 · 강의실. 탭 한 번으로 민법 전체 조문과 판례를 탐색.
               오프라인 캐시로 지하철에서도 OK.
@@ -160,7 +234,7 @@ export default function HomePage() {
             <TerminalCard
               tag="02 · VERIFIED"
               title="검증된 답변"
-              footer="// 98.4% citation accuracy"
+              footer="// citations required"
             >
               GPT-4 Turbo + Claude Opus에 민법/형법/헌법 전체 DB를 RAG로 연결.
               모든 답변에 조문·판례 출처 필수.
@@ -168,7 +242,7 @@ export default function HomePage() {
             <TerminalCard
               tag="03 · YOUR LIBRARY"
               title="자동으로 쌓이는 서재"
-              footer="// avg 2,847 notes after 3 months"
+              footer="// export to Anki / PDF"
             >
               질문은 자동 분류 저장. 과목별 · 주제별로 정리되고, Anki와 PDF로 내보내기.
               시험 직전에 꺼내보세요.
@@ -177,8 +251,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ═══ APP SCREENSHOTS GALLERY ═══ */}
+      <section id="screens" className="border-t border-white/5 py-32">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-12">
+            <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+              // SCREENS
+            </div>
+            <h2 className="mt-4 font-kr text-5xl font-bold tracking-tight text-fg">
+              실제 앱 화면
+            </h2>
+            <p className="mt-4 font-kr text-lg text-dim">
+              Dark Academia Pro 톤. iOS · Android 동일 디자인.
+            </p>
+            <p className="mt-2 font-mono text-[10px] text-dim">
+              // 좌우로 스크롤하여 더 많은 화면 보기 →
+            </p>
+          </div>
+        </div>
+        <div className="mx-auto max-w-[1400px] pl-6">
+          <ScreenshotGallery />
+        </div>
+      </section>
+
       {/* ═══ SCOPE STRIP (출시 목표 범위) ═══ */}
-      <section className="border-t border-white/5 bg-surface-low py-24">
+      <section id="scope" className="border-t border-white/5 bg-surface-low py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
             // 출시 목표 범위
@@ -205,35 +302,58 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ BIG WAITLIST CTA ═══ */}
-      <section id="waitlist" className="relative overflow-hidden border-t border-white/5 py-40">
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background: "radial-gradient(ellipse at center, #A855F7 0%, transparent 60%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-4xl px-6 text-center">
-          <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
-            // COMING SOON
-          </div>
-          <h2 className="mt-6 font-kr text-6xl font-bold leading-tight tracking-tightest text-fg md:text-7xl lg:text-[96px]">
-            가장 먼저
-            <br />
-            만나보세요
-          </h2>
-          <p className="mt-6 font-kr text-xl text-dim">
-            출시 알림 + 얼리 액세스 기회를 드립니다.
-          </p>
-          <div className="mt-12 flex flex-col items-center justify-center gap-4">
-            <a href={WAITLIST_URL} target="_blank" rel="noopener">
-              <Button variant="primary" className="h-16 px-12 text-base">
-                ✉ 대기자 등록하기
-              </Button>
-            </a>
-          </div>
-          <div className="mt-8 font-mono text-xs text-dim">
-            // 이메일 1회만 · 스팸 없음 · 언제든 해지
+      {/* ═══ ABOUT — Made by aithor ═══ */}
+      <section id="about" className="border-t border-white/5 bg-surface-low py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid gap-12 md:grid-cols-[40%_60%] md:gap-16">
+            <div>
+              <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+                // BUILT BY
+              </div>
+              <h2 className="mt-4 font-kr text-5xl font-bold tracking-tight text-fg">
+                aithor
+              </h2>
+              <p className="mt-4 font-mono text-xs text-dim">
+                ai · author · architect
+              </p>
+            </div>
+            <div className="space-y-4">
+              <p className="font-kr text-lg leading-relaxed text-fg">
+                LAW.OS는 <span className="font-bold text-violet-glow">aithor</span>에서
+                기획·설계·개발한 모바일 법률 학습 앱입니다.
+              </p>
+              <p className="font-kr text-base leading-relaxed text-dim">
+                AI 도메인 전문성을 바탕으로 법학도가 실제로 쓰는 학습 도구를
+                만듭니다. 단순한 챗봇이 아닌, 법령·판례 데이터베이스와
+                연결된 검증된 답변과 학습 흐름을 제공합니다.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded border border-white/10 bg-surface p-4">
+                  <div className="font-mono text-[10px] uppercase text-violet-glow">
+                    // STACK
+                  </div>
+                  <div className="mt-2 font-kr text-sm text-fg">
+                    React Native · Supabase · Claude · Gemini
+                  </div>
+                </div>
+                <div className="rounded border border-white/10 bg-surface p-4">
+                  <div className="font-mono text-[10px] uppercase text-violet-glow">
+                    // FOCUS
+                  </div>
+                  <div className="mt-2 font-kr text-sm text-fg">
+                    법학도 · 변호사시험 준비생
+                  </div>
+                </div>
+                <div className="rounded border border-white/10 bg-surface p-4">
+                  <div className="font-mono text-[10px] uppercase text-violet-glow">
+                    // CONTACT
+                  </div>
+                  <div className="mt-2 font-mono text-sm text-cyan">
+                    hello@lawos.kr
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -241,7 +361,7 @@ export default function HomePage() {
       {/* ═══ FOOTER ═══ */}
       <footer className="border-t border-white/5 bg-surface-low py-16">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-12 md:grid-cols-3">
+          <div className="grid gap-12 md:grid-cols-4">
             <div>
               <div className="font-mono text-lg font-bold text-violet-glow">LAW.OS</div>
               <p className="mt-2 font-kr text-xs text-dim">
@@ -253,11 +373,20 @@ export default function HomePage() {
             </div>
             <div>
               <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
+                // BUILT BY
+              </div>
+              <ul className="mt-4 space-y-2 font-mono text-xs text-dim">
+                <li className="text-fg">aithor</li>
+                <li>ai · author · architect</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-mono text-xs uppercase tracking-wider text-violet-glow">
                 // CONTACT
               </div>
               <ul className="mt-4 space-y-2 font-mono text-xs text-dim">
                 <li>hello@lawos.kr</li>
-                <li>문의: 대기자 등록 폼</li>
+                <li>privacy@lawos.kr</li>
               </ul>
             </div>
             <div>
@@ -271,7 +400,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 font-mono text-[10px] text-dim md:flex-row">
-            <div>© 2026 LAW.OS · 출시 준비 중</div>
+            <div>© 2026 aithor · LAW.OS는 aithor의 모바일 앱 제품입니다</div>
             <div>v1.0.0 preview</div>
           </div>
         </div>
