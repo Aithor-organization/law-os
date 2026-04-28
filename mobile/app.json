@@ -59,6 +59,13 @@
           "color": "#A855F7",
           "defaultChannel": "default"
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "aithor-i9",
+          "project": "react-native"
+        }
       ]
     ],
     "experiments": {
