@@ -19,7 +19,7 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.lawos.kr"
+        "EXPO_PUBLIC_API_BASE_URL": "https://law-os-production.up.railway.app"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -32,7 +32,7 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.lawos.kr"
+        "EXPO_PUBLIC_API_BASE_URL": "https://law-os-production.up.railway.app"
       },
       "ios": {
         "resourceClass": "m-medium"
