@@ -17,6 +17,8 @@ export type Profile = {
   tos_accepted_at: string | null;
   privacy_accepted_at: string | null;
   legal_disclaimer_accepted_at: string | null;
+  onboarding_completed: boolean;
+  tutorial_completed: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -114,11 +116,27 @@ export async function saveOnboarding(params: {
     .update({
       user_type: params.userType,
       study_goal: params.studyGoal,
+      onboarding_completed: true,
     })
     .eq("id", userId);
   // Subjects stored separately via user_favorites or a settings table;
   // for MVP we keep only user_type + study_goal in profiles.
   return { error };
+}
+
+// Marks the tutorial as completed so splash doesn't bounce the user back
+// to /tutorial on next launch. Called when the user taps "알겠습니다" on the
+// last tutorial page (or skips via settings re-entry).
+export async function markTutorialCompleted(): Promise<{ error: Error | null }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return { error: new Error("no active session") };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ tutorial_completed: true })
+    .eq("id", userId);
+  return { error: error as Error | null };
 }
 
 // Fetch the current authenticated user's profile row.

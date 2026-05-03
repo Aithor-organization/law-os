@@ -40,6 +40,7 @@ const MENU_SECTIONS: MenuSection[] = [
     defaultExpanded: false,
     links: [
       { label: "프로필 편집", href: "/profile/edit" },
+      { label: "LLM API 키 등록 (BYOK)", href: "/profile/api-keys" },
       { label: "로그아웃", href: "/modals/logout" },
       { label: "계정 삭제", href: "/profile/delete-account" },
     ],
@@ -47,7 +48,10 @@ const MENU_SECTIONS: MenuSection[] = [
   {
     title: "기타",
     defaultExpanded: false,
-    links: [{ label: "법적 정보", href: "/profile/legal" }],
+    links: [
+      { label: "튜토리얼 다시 보기", href: "/tutorial" },
+      { label: "법적 정보", href: "/profile/legal" },
+    ],
   },
 ];
 

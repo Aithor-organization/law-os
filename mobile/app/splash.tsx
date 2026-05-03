@@ -2,26 +2,41 @@ import { useEffect } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { getCurrentSession } from "@/lib/auth";
+import { getCurrentSession, getProfile } from "@/lib/auth";
 
 /**
  * Splash Screen — Dark Academia Pro / Sovereign Terminal
  *
- * 최소 1초 대기 후 세션 유무에 따라 분기:
- *  - 세션 있음 → /(tabs)
+ * 최소 1초 대기 후 세션·온보딩·튜토리얼 상태에 따라 분기:
  *  - 세션 없음 → /(auth)/login
+ *  - 세션 있음 + 온보딩 미완료 → /(auth)/onboarding (강종 후 재진입 시 복귀)
+ *  - 세션 있음 + 온보딩 완료 + 튜토리얼 미완료 → /tutorial
+ *  - 세션 있음 + 온보딩 완료 + 튜토리얼 완료 → /(tabs)
+ *
+ * Profile fetch가 실패하면 보수적으로 onboarding으로 라우팅 — 이미 완료한
+ * 사용자가 한 번 더 보는 비용보다 미완료 사용자가 메인에 갇히는 비용이 큼.
  */
 export default function SplashScreen() {
   useEffect(() => {
     let cancelled = false;
     const minDelay = new Promise((resolve) => setTimeout(resolve, 1000));
-    Promise.all([getCurrentSession(), minDelay]).then(([result]) => {
+    Promise.all([getCurrentSession(), minDelay]).then(async ([result]) => {
       if (cancelled) return;
-      if (result.session) {
-        router.replace("/(tabs)" as any);
-      } else {
+      if (!result.session) {
         router.replace("/(auth)/login" as any);
+        return;
       }
+      const { data: profile } = await getProfile();
+      if (cancelled) return;
+      if (!profile?.onboarding_completed) {
+        router.replace("/(auth)/onboarding" as any);
+        return;
+      }
+      if (!profile.tutorial_completed) {
+        router.replace("/tutorial" as any);
+        return;
+      }
+      router.replace("/(tabs)" as any);
     });
     return () => {
       cancelled = true;

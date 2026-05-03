@@ -62,7 +62,11 @@ export default function OnboardingScreen() {
       Alert.alert("저장 실패", error.message);
       return;
     }
-    router.replace("/(tabs)" as any);
+    // Phase 2: 온보딩 완료 → 튜토리얼로 진입.
+    // splash가 tutorial_completed 플래그를 보고 다음 진입 시 분기하므로,
+    // 여기서는 무조건 /tutorial로 보내고 사용자가 "알겠습니다" 누르면 그때
+    // markTutorialCompleted()가 호출됨.
+    router.replace("/tutorial" as any);
   };
 
   const canProceed =
@@ -78,15 +82,14 @@ export default function OnboardingScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Progress indicator */}
+        {/* Skip 버튼 제거 (016 migration): saveOnboarding이 호출되지 않으면
+            onboarding_completed=false로 남아 다음 진입 시 splash가 다시 이
+            화면으로 라우팅하므로 사용자가 영원히 빠져나갈 수 없는 루프가 됨.
+            온보딩은 짧은 3-step이므로 skip 없이 진행하도록 강제. */}
         <View className="px-6 pt-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="font-mono text-[10px] uppercase tracking-wider text-violet-glow">
-              // step {step} of 3 · onboarding
-            </Text>
-            <Pressable onPress={() => router.replace("/(tabs)" as any)}>
-              <Text className="font-mono text-[10px] text-dim">skip →</Text>
-            </Pressable>
-          </View>
+          <Text className="font-mono text-[10px] uppercase tracking-wider text-violet-glow">
+            // step {step} of 3 · onboarding
+          </Text>
           <View className="mt-3 flex-row gap-2">
             {[1, 2, 3].map((i) => (
               <View

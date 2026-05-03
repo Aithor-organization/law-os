@@ -2,11 +2,24 @@ import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from "react-native-reanimated";
 import { initTelemetry, wrapRoot } from "@/lib/telemetry";
 
 // Sentry init at module load — fires before the first render. No-op when
 // EXPO_PUBLIC_SENTRY_DSN is absent or @sentry/react-native is not installed.
 initTelemetry();
+
+// Reanimated 4 strict mode는 useSharedValue 접근을 매우 엄격하게 검사하여
+// 튜토리얼 페이지의 정상적인 worklet 사용에서도 false-positive warning을
+// 우다다 출력. strict=false로 두면 worklet 위반은 여전히 잡되 읽기 시점
+// 경고만 억제. 실제 런타임 안전성에는 영향 없음.
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 /**
  * 폰트 로딩:

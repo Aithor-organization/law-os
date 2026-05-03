@@ -91,6 +91,12 @@ export default function SettingsScreen() {
         },
         { label: "테마", desc: "Dark Academia Pro", type: "link" },
         { label: "언어", desc: "한국어", type: "link" },
+        {
+          label: "튜토리얼 다시 보기",
+          desc: "앱 사용법 5단계 안내",
+          type: "link",
+          href: "/tutorial",
+        },
       ],
     },
     {
@@ -98,6 +104,12 @@ export default function SettingsScreen() {
       items: [
         { label: "프로필 편집", type: "link", href: "/profile/edit" },
         { label: "학습 통계", type: "link", href: "/profile/stats" },
+        {
+          label: "LLM API 키 등록",
+          desc: "본인 키 사용 시 무제한",
+          type: "link",
+          href: "/profile/api-keys",
+        },
         { label: "법적 고지", type: "link", href: "/profile/legal" },
       ],
     },

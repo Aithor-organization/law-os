@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { TextInput, TextInputProps, View, Text } from "react-native";
 
 interface InputProps extends TextInputProps {
@@ -8,7 +7,9 @@ interface InputProps extends TextInputProps {
   rightIcon?: React.ReactNode;
 }
 
-// Dark Academia Pro 입력 필드. 하단 언더라인, focus 시 바이올렛 글로우.
+// Focus state was removed: causing TextInput to remount on focus under
+// NativeWind 4 + Expo Go, leading to immediate blur ("focus flash").
+// Visual focus styling can be restored later via Animated API without React state.
 export function Input({
   label,
   error,
@@ -16,46 +17,35 @@ export function Input({
   rightIcon,
   ...props
 }: InputProps) {
-  const [focused, setFocused] = useState(false);
-
   return (
-    <View className="w-full">
+    <View style={{ width: "100%" }}>
       {label ? (
         <Text className="mb-2 font-mono text-[10px] uppercase tracking-wider text-dim">
           {label}
         </Text>
       ) : null}
       <View
-        className={`flex-row items-center border-b ${
-          focused ? "border-violet" : "border-white/10"
-        } ${error ? "border-danger" : ""}`}
-        style={
-          focused
-            ? {
-                shadowColor: "#A855F7",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-              }
-            : undefined
-        }
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          minHeight: 48,
+          borderBottomWidth: 1,
+          borderBottomColor: error ? "#EF4444" : "rgba(255,255,255,0.1)",
+        }}
       >
-        {leftIcon ? <View className="mr-3">{leftIcon}</View> : null}
+        {leftIcon ? <View style={{ marginRight: 12 }}>{leftIcon}</View> : null}
         <TextInput
           {...props}
           placeholderTextColor="#71717A"
-          onFocus={(e) => {
-            setFocused(true);
-            props.onFocus?.(e);
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            fontSize: 16,
+            color: "#F4F4F5",
+            fontFamily: "Pretendard",
           }}
-          onBlur={(e) => {
-            setFocused(false);
-            props.onBlur?.(e);
-          }}
-          className="flex-1 py-3 font-kr text-base text-fg"
-          style={{ outlineStyle: "none" } as any}
         />
-        {rightIcon ? <View className="ml-2">{rightIcon}</View> : null}
+        {rightIcon ? <View style={{ marginLeft: 8 }}>{rightIcon}</View> : null}
       </View>
       {error ? (
         <Text className="mt-1 font-mono text-xs text-danger">[!] {error}</Text>
