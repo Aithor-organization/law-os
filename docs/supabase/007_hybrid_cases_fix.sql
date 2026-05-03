@@ -110,7 +110,7 @@ begin
     m.id, m.case_no, m.court, m.decided_at, m.category, m.summary, m.judgment_points,
     m.lexical_rank, m.vector_rank, m.rrf_score
   from merged m
-  where m.id is not null
+  where m.id is not null/
   order by m.rrf_score desc, m.decided_at desc nulls last
   limit p_match_count;
 end;

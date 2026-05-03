@@ -24,34 +24,35 @@
 ### 백엔드
 | 레이어 | 기술 | 버전 | 선택 이유 |
 |--------|------|------|----------|
-| Runtime | **Node.js** | 22 LTS | TS 공유, LLM SDK 생태계 |
-| Framework | **Hono** | 4.x | Fastify보다 가볍고 Edge 호환, Node/Bun 모두 지원 |
-| ORM | **Drizzle** | latest | Prisma보다 가볍고 SQL에 가까움, 타입 추론 |
+| Runtime | **Python** | 3.11+ | AI/LLM 연동과 로컬 디버깅 단순화 |
+| Framework | **FastAPI** | 0.115+ | 비동기 API, SSE 스트리밍, 명확한 백엔드 계층 |
+| HTTP Client | **httpx** | 0.27+ | Gemini/Supabase 연동, async streaming |
+| DB/Auth Access | **Supabase Cloud** | hosted | Auth + Postgres + Storage 관리형 유지 |
 | DB | **Supabase Postgres** | 15 | Auth + RLS + Realtime 통합, pgvector 확장 |
-| Vector DB | **pgvector** (Supabase 내장) | 0.7+ | Pinecone 불필요, 단일 DB로 단순화 (초기) |
-| Cache | **Upstash Redis** | Serverless | 세션, rate limit, LLM 응답 캐시 |
-| Queue | **Upstash QStash** | Serverless | 비동기 작업 (법령 동기화, 임베딩 생성) |
+| Vector DB | **pgvector** (Supabase 내장) | 0.7+ | Pinecone 불필요, 단일 DB 유지 |
 | Storage | **Supabase Storage** | S3 호환 | 판례 PDF, 사용자 업로드 |
 
-### AI / LLM
+> 🔄 **아키텍처 결정 (2026-04-16 변경)**: Supabase Edge Functions 기반 로컬 디버깅/스트리밍 복잡도를 줄이기 위해, 백엔드 계층을 FastAPI로 분리하고 Supabase는 온라인 Auth/DB/Storage 인프라로 유지한다. 1차 마이그레이션 범위는 chat 경로이며, 나머지 서버 작업도 순차 이전한다.
+
+### AI / LLM (Gemini 전용)
 | 용도 | 기술 | 비용 전략 |
 |------|------|-----------|
-| 일반 채팅 | **Claude Sonnet 4.5** (Anthropic API) | 한국어 품질, 긴 컨텍스트 |
-| Deep Debate — Plaintiff/Defendant | **Claude Sonnet 4.5** | 비용 절감 |
-| Deep Debate — Judge/Narrator | **Claude Opus 4.6** | 판단/요약 품질 필요 |
-| Embeddings | **OpenAI text-embedding-3-large** (3072 dim) | 한국어 품질 우수, 저비용 |
-| Reranker | **Cohere Rerank-3.5** | 검색 정확도 향상 |
-| Orchestration | **LangGraph** (TypeScript) | Deep Debate 상태머신 |
+| 일반 채팅 | **Gemini 2.5 Flash** | 대부분의 질문 처리, 저비용·저지연 |
+| 복잡 추론 / Deep Debate | **Gemini 2.5 Pro** | 긴 컨텍스트, 판례 분석, 토론 조정 |
+| Embeddings | **gemini-embedding-001** (3072 dim, Matryoshka) | 스키마의 `vector(3072)` 호환, 한국어 지원 |
+| Orchestration | (MVP: 순차 실행) | 복잡해지면 LangGraph 재도입 |
+
+> 모델 ID는 `apps/api/.env.local`의 `GEMINI_MODEL_FLASH` / `GEMINI_MODEL_PRO` / `GEMINI_EMBEDDING_MODEL`로 오버라이드 가능. Google이 신규 모델을 출시하면 문자열만 교체.
 
 ### 인프라 / 배포
 | 레이어 | 기술 | 선택 이유 |
 |--------|------|----------|
-| 백엔드 호스팅 | **Cloudflare Workers** | Edge, Hono와 완벽 호환, 저비용 |
+| 백엔드 호스팅 | **Supabase Edge Functions** (Deno) | Supabase 통합, 별도 계정·별도 호스팅 불필요 |
 | DB 호스팅 | **Supabase Cloud** (Seoul region) | 한국 레이턴시, 관리형 |
 | 모바일 CI/CD | **EAS Build + EAS Submit** | Expo 표준 |
 | 랜딩 페이지 | **Vercel** | 기존 배포 |
 | 모니터링 | **Sentry** | 크래시 + 성능 |
-| 법령 데이터 | **국가법령정보센터 OpenAPI** | 무료, 공식 |
+| 법령 데이터 | **국가법령정보센터 OpenAPI** + **LAW.OS Law MCP** | 공식 원문 수집 + MCP 툴 조회 계층 |
 
 ### 개발 도구
 | 용도 | 기술 |
@@ -70,17 +71,17 @@
 
 ```
 law-os/
+├── mobile/              # Expo 앱 (현재 구조: law-os/mobile/)
 ├── apps/
-│   ├── mobile/          # Expo 앱
-│   ├── api/             # Hono 백엔드 (Cloudflare Workers)
-│   └── landing-page/    # Next.js (기존)
-├── packages/
-│   ├── shared-types/    # User, Message, Citation 등 공유 타입
-│   ├── api-client/      # 모바일↔백엔드 타입 안전 클라이언트 (Hono RPC)
-│   ├── prompts/         # LLM 시스템 프롬프트 템플릿
-│   └── legal-data/      # 법령 수집 스크립트
-├── docs/                # PRD, feature-spec, 이 문서
-└── tools/               # 개발 스크립트
+│   ├── backend/         # FastAPI backend
+│   │   └── app/
+│   │       ├── auth.py  # Supabase JWT 검증
+│   │       ├── gemini.py# Gemini streaming proxy
+│   │       └── main.py  # /chat, /health
+│   └── api/             # Legacy Supabase Edge Functions (migration target)
+├── landing-page/        # Next.js
+├── docs/                # PRD, feature-spec, 이 문서, supabase/*.sql
+└── assets/              # 공유 에셋
 ```
 
 ---
@@ -102,28 +103,31 @@ law-os/
 ## 환경 변수 (핵심 목록)
 
 ```bash
-# 모바일 (apps/mobile/.env)
-EXPO_PUBLIC_API_URL=
+# 모바일 (mobile/.env.local)
+EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 EXPO_PUBLIC_POSTHOG_KEY=
 EXPO_PUBLIC_REVENUECAT_APPLE_KEY=
 EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY=
 
-# 백엔드 (apps/api/.dev.vars)
+# 백엔드 (apps/backend/.env)
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-COHERE_API_KEY=
-UPSTASH_REDIS_URL=
-UPSTASH_REDIS_TOKEN=
+SUPABASE_ANON_KEY=
+GEMINI_API_KEY=
+GEMINI_MODEL_FLASH=gemini-2.5-flash
+GEMINI_MODEL_PRO=gemini-2.5-pro
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+BACKEND_CORS_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
+
+# 출시 이후 추가 예정
 SENTRY_DSN=
-LAW_API_KEY=                    # 국가법령정보센터
+LAW_API_OC=                     # 국가법령정보센터 API 인증값
 REVENUECAT_WEBHOOK_SECRET=
 ```
 
-모든 시크릿은 **1Password Vault** → **EAS Secrets** / **Cloudflare Secrets** 로 주입.
+로컬: `.env.local` 또는 `.env` (gitignore). FastAPI는 `.env`, 모바일은 `.env.local` 사용.
 
 ---
 

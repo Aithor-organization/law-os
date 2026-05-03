@@ -100,6 +100,17 @@ where c.relnamespace = 'public'::regnamespace
 
 -- Bonus 2: list permissive policies that use `true` — these should be
 -- rare and intentional (e.g., public-read catalogs like statutes/cases).
+-- (Standalone query — CTEs from the audit query above are out of scope here.)
 select
-  tbl, polname, using_expr
-from permissive_policies;
+  c.relname as tbl,
+  p.polname,
+  pg_get_expr(p.polqual, p.polrelid) as using_expr
+from pg_policy p
+join pg_class c on c.oid = p.polrelid
+where c.relnamespace = 'public'::regnamespace
+  and c.relname in (
+    'profiles', 'conversations', 'messages', 'citations', 'notes',
+    'user_bookmarks', 'study_activities', 'notification_preferences',
+    'notifications', 'push_tokens'
+  )
+  and pg_get_expr(p.polqual, p.polrelid) = 'true';

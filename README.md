@@ -16,6 +16,10 @@
 
 ```
 law-os/
+├── mobile/             # Expo 앱
+├── apps/
+│   ├── backend/        # FastAPI backend (chat-first migration)
+│   └── api/            # Legacy Supabase Edge Functions (migration target)
 ├── landing-page/       # Next.js 14 + Tailwind CSS 마케팅 사이트
 │   ├── app/            # App Router 페이지
 │   ├── components/ui/  # Button, TerminalCard
