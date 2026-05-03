@@ -13,10 +13,13 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from .auth import authenticate_bearer_token
+from .byok import consume_free_chat, parse_byok_headers
 from .chat_store import persist_assistant_message
 from .config import get_settings, validate_settings
-from .gemini import stream_chat
+from .gemini import build_system_instruction, stream_chat
 from .http_client import build_client, set_client
+from .llm import stream_byok
+from .llm.router import test_byok
 from .law_subscriptions import (
     get_install_status,
     ingest_law_on_demand,
@@ -128,6 +131,41 @@ async def health():
     }
 
 
+@app.post("/byok/test")
+async def byok_test_endpoint(
+    authorization: str | None = Header(default=None),
+    x_byok_provider: str | None = Header(default=None),
+    x_byok_model: str | None = Header(default=None),
+    x_byok_key: str | None = Header(default=None),
+):
+    """Proxy BYOK key validation through the backend.
+
+    Why: Gemini's REST API uses ?key=... in the URL, which leaks the key into
+    client network logs, ISP traces, and corporate proxies. Routing the test
+    ping through this endpoint keeps the user's key inside an HTTPS body that
+    is also covered by the BYOKConfig __repr__ mask.
+    """
+    user = await authenticate_bearer_token(authorization)
+    cfg = parse_byok_headers(x_byok_provider, x_byok_model, x_byok_key)
+    if cfg is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="missing_byok_headers",
+        )
+    try:
+        ok = await test_byok(cfg)
+    except Exception:  # noqa: BLE001
+        # Defensive: never echo the key back, never include exception text in
+        # the response (could contain auth header repr).
+        logger.exception("/byok/test failed user_id=%s provider=%s",
+                         user.user_id, cfg.provider)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="provider_unreachable",
+        )
+    return {"ok": ok, "provider": cfg.provider}
+
+
 @app.post("/search")
 async def search_endpoint(
     request: SearchRequest,
@@ -216,16 +254,42 @@ async def chat_endpoint(
     request: ChatRequest,
     http_request: Request,
     authorization: str | None = Header(default=None),
+    x_byok_provider: str | None = Header(default=None),
+    x_byok_model: str | None = Header(default=None),
+    x_byok_key: str | None = Header(default=None),
 ):
     user = await authenticate_bearer_token(authorization)
     request_id = getattr(http_request.state, "request_id", "unknown")
+
+    # BYOK gate: if user provides their own LLM key, route to that provider
+    # and skip the daily quota. Otherwise consume a free message via RPC and
+    # 429 if exhausted.
+    byok_cfg = parse_byok_headers(x_byok_provider, x_byok_model, x_byok_key)
+    if byok_cfg is None:
+        rate = await consume_free_chat(user.token)
+        if not rate.allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "error": "free_quota_exhausted",
+                    "used": rate.used,
+                    "limit": rate.limit,
+                    "bonus": rate.bonus,
+                },
+            )
+        logger.info(
+            "/chat quota user_id=%s used=%s limit=%s",
+            user.user_id, rate.used, rate.limit
+        )
+
     context_blocks, citation_candidates, rag_meta, recommendations = await retrieve_rag_context(
         request.message, user_id=user.user_id
     )
     logger.info(
-        "/chat accepted user_id=%s tier=%s request_id=%s rag_statutes=%s rag_precedents=%s rec=%s",
+        "/chat accepted user_id=%s tier=%s byok=%s request_id=%s rag_statutes=%s rag_precedents=%s rec=%s",
         user.user_id,
         request.tier,
+        byok_cfg.provider if byok_cfg else "none",
         request_id,
         rag_meta.get("statutes", 0),
         rag_meta.get("precedents", 0),
@@ -254,11 +318,23 @@ async def chat_endpoint(
                 }
                 yield f"data: {json.dumps(rec_payload, ensure_ascii=False)}\n\n"
 
-            async for chunk in stream_chat(
-                request.message,
-                request.tier,
-                context_blocks=context_blocks,
-            ):
+            if byok_cfg is not None:
+                system = build_system_instruction(context_blocks)
+                stream_iter = stream_byok(byok_cfg, request.message, system=system)
+                model_label = f"{byok_cfg.provider}:{byok_cfg.model}"
+            else:
+                stream_iter = stream_chat(
+                    request.message,
+                    request.tier,
+                    context_blocks=context_blocks,
+                )
+                model_label = (
+                    settings.gemini_model_pro
+                    if request.tier == "pro"
+                    else settings.gemini_model_flash
+                )
+
+            async for chunk in stream_iter:
                 emitted_chars += len(chunk)
                 assistant_chunks.append(chunk)
                 yield f"data: {json.dumps({'text': chunk}, ensure_ascii=False)}\n\n"
@@ -271,7 +347,7 @@ async def chat_endpoint(
                         user_id=user.user_id,
                         conversation_id=request.conversationId,
                         content=assistant_content,
-                        model=settings.gemini_model_pro if request.tier == "pro" else settings.gemini_model_flash,
+                        model=model_label,
                         citations=citation_candidates,
                     )
                 except Exception:  # noqa: BLE001
@@ -290,9 +366,22 @@ async def chat_endpoint(
             )
             yield "data: [DONE]\n\n"
         except Exception:  # noqa: BLE001
-            logger.exception("/chat stream failed request_id=%s", request_id)
-            error_payload = {"error": "stream_failed", "request_id": request_id}
+            logger.exception(
+                "/chat stream failed request_id=%s byok=%s",
+                request_id,
+                byok_cfg.provider if byok_cfg else "none",
+            )
+            error_payload = {
+                "error": "stream_failed",
+                "request_id": request_id,
+                # Non-sensitive context to help client UI render a useful
+                # message (e.g., "Anthropic 응답 실패"). API key never echoed.
+                "provider": byok_cfg.provider if byok_cfg else "default",
+            }
             yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
+            # Always close the stream cleanly so the client's reader loop
+            # doesn't hang waiting for [DONE] after a partial response.
+            yield "data: [DONE]\n\n"
 
     return StreamingResponse(
         event_stream(),

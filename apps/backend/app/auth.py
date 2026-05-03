@@ -12,6 +12,9 @@ from .http_client import get_client
 class AuthenticatedUser:
     user_id: str
     email: str | None
+    # Raw JWT — needed when invoking RPCs that gate on auth.uid() so the
+    # caller context survives into PostgREST.
+    token: str
 
 
 async def authenticate_bearer_token(authorization: str | None) -> AuthenticatedUser:
@@ -54,4 +57,6 @@ async def authenticate_bearer_token(authorization: str | None) -> AuthenticatedU
             detail="invalid_token",
         )
 
-    return AuthenticatedUser(user_id=user_id, email=payload.get("email"))
+    return AuthenticatedUser(
+        user_id=user_id, email=payload.get("email"), token=token
+    )

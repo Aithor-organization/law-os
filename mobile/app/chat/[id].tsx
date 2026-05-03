@@ -13,9 +13,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import Markdown from "react-native-markdown-display";
 import { listMessages, type Message } from "@/lib/conversations";
-import { sendChatMessage, type ChatTier, type LawRecommendation } from "@/lib/chat";
+import { FreeQuotaExhaustedError, sendChatMessage, type ChatTier, type LawRecommendation } from "@/lib/chat";
 import { subscribeLaw } from "@/lib/laws";
 import { DisclaimerBanner } from "@/components/ui/DisclaimerBanner";
+import { RateLimitModal } from "@/components/RateLimitModal";
 
 // Dark Academia Pro markdown styles
 const markdownStyles = {
@@ -59,6 +60,11 @@ export default function ActiveChatScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<LawRecommendation[]>([]);
   const [installingRec, setInstallingRec] = useState<Set<string>>(new Set());
+  const [quotaModal, setQuotaModal] = useState<{
+    used: number;
+    limit: number;
+    bonus: number;
+  } | null>(null);
   const listRef = useRef<FlatList<ListItem>>(null);
   const seedSentRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -127,7 +133,9 @@ export default function ActiveChatScreen() {
       }
       setStreaming(false);
       setStreamBuffer("");
-      if (error && !aborted) {
+      if (error instanceof FreeQuotaExhaustedError) {
+        setQuotaModal({ used: error.used, limit: error.limit, bonus: error.bonus });
+      } else if (error && !aborted) {
         setLoadError(error.message);
       }
       if (!aborted) {
@@ -583,6 +591,14 @@ export default function ActiveChatScreen() {
           </Text>
         </View>
       </View>
+
+      <RateLimitModal
+        visible={quotaModal !== null}
+        used={quotaModal?.used ?? 0}
+        limit={quotaModal?.limit ?? 5}
+        bonus={quotaModal?.bonus ?? 0}
+        onClose={() => setQuotaModal(null)}
+      />
     </SafeAreaView>
   );
 }

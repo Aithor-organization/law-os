@@ -1,6 +1,20 @@
 import { supabase } from "./supabase";
+import { byokHeaders } from "./byok";
 import { insertMessage, touchConversation } from "./conversations";
 import { recordActivity } from "./studyActivity";
+
+// 429 응답 시 RateLimitModal이 호출자에게 의미를 전달할 수 있도록 별도 에러
+// 클래스로 노출. message에 used/limit/bonus 정보가 들어감.
+export class FreeQuotaExhaustedError extends Error {
+  constructor(
+    public used: number,
+    public limit: number,
+    public bonus: number,
+  ) {
+    super("free_quota_exhausted");
+    this.name = "FreeQuotaExhaustedError";
+  }
+}
 
 // Chat backend URL.
 // FastAPI backend is now the primary and required chat path.
@@ -67,6 +81,7 @@ export async function sendChatMessage(params: {
 
   // 2) Call the backend and stream SSE.
   const url = `${getChatBaseUrl()}/chat`;
+  const extraHeaders = await byokHeaders();
   let res: Response;
   try {
     res = await fetch(url, {
@@ -74,6 +89,7 @@ export async function sendChatMessage(params: {
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${token}`,
+        ...extraHeaders,
       },
       body: JSON.stringify({
         message: params.message,
@@ -89,6 +105,22 @@ export async function sendChatMessage(params: {
     const msg = err instanceof Error ? err.message : String(err);
     params.handlers.onError?.(msg);
     return { assistantContent: "", error: new Error(msg), aborted: false };
+  }
+
+  // 429: free quota exhausted (BYOK off). 호출자가 RateLimitModal을 띄울
+  // 수 있도록 구조화된 에러로 변환.
+  if (res.status === 429) {
+    const body = (await res.json().catch(() => ({}))) as {
+      detail?: { used?: number; limit?: number; bonus?: number };
+    };
+    const d = body.detail ?? {};
+    const err = new FreeQuotaExhaustedError(
+      d.used ?? 0,
+      d.limit ?? 5,
+      d.bonus ?? 0,
+    );
+    params.handlers.onError?.(err.message);
+    return { assistantContent: "", error: err, aborted: false };
   }
 
   if (!res.ok || !res.body) {

@@ -112,3 +112,27 @@ class SupabaseRestClient:
             json=json_body,
             timeout=15.0,
         )
+
+    async def rpc_as_user(
+        self,
+        function_name: str,
+        *,
+        user_jwt: str,
+        json_body: Any = None,
+    ) -> httpx.Response:
+        """Calls an RPC using the user's JWT so `auth.uid()` resolves to the
+        caller. Required for SECURITY DEFINER functions that gate on
+        auth.uid() (e.g., consume_free_chat, grant_ad_bonus)."""
+        if not self.base_url or not self.anon_key:
+            raise RuntimeError("Supabase REST client is not configured")
+        client = get_client()
+        return await client.post(
+            f"{self.base_url}/rest/v1/rpc/{function_name}",
+            headers={
+                "apikey": self.anon_key,
+                "Authorization": f"Bearer {user_jwt}",
+                "content-type": "application/json",
+            },
+            json=json_body if json_body is not None else {},
+            timeout=15.0,
+        )
