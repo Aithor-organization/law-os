@@ -51,3 +51,6 @@ venv/
 **/supabase/.temp/
 **/supabase/.branches/
 
+# Local backup files (env-switching during dev/preview/prod migration)
+*.bak
+
