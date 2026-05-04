@@ -41,6 +41,10 @@ export type StreamHandlers = {
   onChunk: (text: string) => void;
   onError?: (error: string) => void;
   onRecommendations?: (recs: LawRecommendation[]) => void;
+  // Fired right after the user message is persisted to Supabase, before the
+  // backend stream begins. UI uses this to render the user bubble immediately
+  // instead of waiting for the assistant response.
+  onUserPersisted?: (msg: { id: string; content: string; created_at: string }) => void;
 };
 
 function isAbortError(err: unknown): boolean {
@@ -77,6 +81,22 @@ export async function sendChatMessage(params: {
   });
   if (userInsert.error) {
     return { assistantContent: "", error: userInsert.error, aborted: false };
+  }
+  // Notify the UI immediately so the user bubble appears before the assistant
+  // begins streaming. Uses the actual persisted row when available; falls back
+  // to a synthetic record when the insert returned without data so the bubble
+  // still renders.
+  if (params.handlers.onUserPersisted) {
+    const row = userInsert.data;
+    params.handlers.onUserPersisted(
+      row
+        ? { id: row.id, content: row.content, created_at: row.created_at }
+        : {
+            id: `pending-${Date.now()}`,
+            content: params.message,
+            created_at: new Date().toISOString(),
+          },
+    );
   }
 
   // 2) Call the backend and stream SSE.

@@ -125,6 +125,22 @@ export default function ActiveChatScreen() {
           onChunk: (chunk) => setStreamBuffer((prev) => prev + chunk),
           onError: (err) => setLoadError(err),
           onRecommendations: (recs) => setRecommendations(recs),
+          // Optimistic render: append the user bubble as soon as the row is
+          // persisted, so the user sees their question while the assistant
+          // streams. Final refresh() at the end reconciles ids/timestamps.
+          onUserPersisted: (msg) =>
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: msg.id,
+                role: "user",
+                content: msg.content,
+                created_at: msg.created_at,
+                citations: [],
+                model: null,
+                conversation_id: id,
+              } as Message,
+            ]),
         },
       });
 
